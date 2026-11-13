@@ -23,6 +23,7 @@ const productController = require('./src/controllers/productController');
 const inventoryController = require('./src/controllers/inventoryController');
 const orderController = require('./src/controllers/orderController');
 const reportController = require('./src/controllers/reportController');
+const authController = require('./src/controllers/authController');
 
 if (express) {
   // KHỞI CHẠY BẰNG EXPRESS SERVER TIÊU CHUẨN KHI ĐÃ CÓ NODE_MODULES
@@ -115,9 +116,23 @@ if (express) {
           fakeReq.body = {};
         }
 
+        // Auth Routes
+        if (pathname === '/api/auth/login' && req.method === 'POST') {
+          return authController.login(fakeReq, fakeRes);
+        }
+        if (pathname === '/api/auth/profile') {
+          return authController.getProfile(fakeReq, fakeRes);
+        }
+
         // Branch Routes
         if (pathname === '/api/branches') {
           return branchController.getBranches(fakeReq, fakeRes);
+        }
+        if (pathname === '/api/roles') {
+          return branchController.getRoles(fakeReq, fakeRes);
+        }
+        if (pathname === '/api/users') {
+          return branchController.getUsers(fakeReq, fakeRes);
         }
         if (pathname.startsWith('/api/branches/')) {
           fakeReq.params.id = pathname.replace('/api/branches/', '');

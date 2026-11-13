@@ -126,9 +126,80 @@
       </div>
     </div>
 
-    <!-- PHẦN 2: BỘ CÂU HỎI VẤN ĐÁP THEO CHUẨN MỤC 6.3 CỦA ĐỀ CƯƠNG -->
+    <!-- PHẦN 2: MA TRẬN PHÂN QUYỀN (RBAC) 5 ROLES THEO MULTITENANT -->
+    <div class="table-container" style="padding: 1.5rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--secondary);">
+        <i class="fa-solid fa-user-lock"></i> 2. Ma Trận Phân Quyền 5 Vai Trò (Common Roles & Local Roles)
+      </h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        Hệ thống tuân thủ nghiêm ngặt nguyên tắc <strong>Least Privilege (Đặc quyền tối thiểu)</strong> và phân định rạch ròi phạm vi giữa <strong>CDB$ROOT</strong> và <strong>Pluggable Databases (PDBs)</strong>.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Tên Role</th>
+            <th>Loại Role</th>
+            <th>Container Hiệu Lực</th>
+            <th>Quyền DDL/Admin</th>
+            <th>Bán Hàng POS (SP_TAO_HOADON)</th>
+            <th>Quản Lý Tồn Kho (SP_NHAP_KHO)</th>
+            <th>Báo Cáo Hợp Nhất (CONTAINERS)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>c##role_quan_tri_chuoi</strong></td>
+            <td><span class="badge" style="background: #f3e8ff; color: #7e22ce;">COMMON ROLE</span></td>
+            <td>CDB$ROOT + ALL PDBs</td>
+            <td><i class="fa-solid fa-check" style="color: #059669;"></i> Toàn quyền</td>
+            <td><i class="fa-solid fa-check" style="color: #059669;"></i> Có</td>
+            <td><i class="fa-solid fa-check" style="color: #059669;"></i> Có</td>
+            <td><i class="fa-solid fa-check" style="color: #059669;"></i> Có</td>
+          </tr>
+          <tr>
+            <td><strong>c##role_ban_giam_doc</strong></td>
+            <td><span class="badge" style="background: #f3e8ff; color: #7e22ce;">COMMON ROLE</span></td>
+            <td>CDB$ROOT + ALL PDBs</td>
+            <td><i class="fa-solid fa-xmark" style="color: #dc2626;"></i> Không</td>
+            <td><i class="fa-solid fa-xmark" style="color: #dc2626;"></i> Không (Chỉ đọc)</td>
+            <td><i class="fa-solid fa-xmark" style="color: #dc2626;"></i> Không (Chỉ đọc)</td>
+            <td><i class="fa-solid fa-check" style="color: #059669;"></i> Toàn quyền đọc</td>
+          </tr>
+          <tr>
+            <td><strong>ROLE_QUAN_LY_CHI_NHANH</strong></td>
+            <td><span class="badge badge-info">LOCAL ROLE</span></td>
+            <td>Chỉ tại PDB Chi nhánh</td>
+            <td><i class="fa-solid fa-xmark" style="color: #dc2626;"></i> Không</td>
+            <td><i class="fa-solid fa-check" style="color: #059669;"></i> Có</td>
+            <td><i class="fa-solid fa-check" style="color: #059669;"></i> Duyệt chuyển kho</td>
+            <td><i class="fa-solid fa-xmark" style="color: #dc2626;"></i> Chỉ xem PDB mình</td>
+          </tr>
+          <tr>
+            <td><strong>ROLE_THU_NGAN</strong></td>
+            <td><span class="badge badge-info">LOCAL ROLE</span></td>
+            <td>Chỉ tại PDB Chi nhánh</td>
+            <td><i class="fa-solid fa-xmark" style="color: #dc2626;"></i> Không</td>
+            <td><i class="fa-solid fa-check" style="color: #059669;"></i> Thực thi bán hàng</td>
+            <td><i class="fa-solid fa-xmark" style="color: #dc2626;"></i> Bị cấm sửa kho</td>
+            <td><i class="fa-solid fa-xmark" style="color: #dc2626;"></i> Không</td>
+          </tr>
+          <tr>
+            <td><strong>ROLE_NHAN_VIEN_KHO</strong></td>
+            <td><span class="badge badge-info">LOCAL ROLE</span></td>
+            <td>Chỉ tại PDB Chi nhánh</td>
+            <td><i class="fa-solid fa-xmark" style="color: #dc2626;"></i> Không</td>
+            <td><i class="fa-solid fa-xmark" style="color: #dc2626;"></i> Bị cấm lập đơn</td>
+            <td><i class="fa-solid fa-check" style="color: #059669;"></i> Nhập/Chuyển kho</td>
+            <td><i class="fa-solid fa-xmark" style="color: #dc2626;"></i> Không</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PHẦN 3: BỘ CÂU HỎI VẤN ĐÁP THEO CHUẨN MỤC 6.3 CỦA ĐỀ CƯƠNG -->
     <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem; color: var(--secondary);">
-      <i class="fa-solid fa-comments"></i> 2. Bộ Câu Hỏi Vấn Đáp Trọng Tâm (Kèm Gợi Ý Trả Lời)
+      <i class="fa-solid fa-comments"></i> 3. Bộ Câu Hỏi Vấn Đáp Trọng Tâm (Kèm Gợi Ý Trả Lời)
     </h2>
 
     <!-- CÂU 1 -->
@@ -194,5 +265,7 @@
     <div>Đề tài 1: Hệ thống Quản lý Chuỗi Siêu Thị Đa Chi Nhánh (Multitenant CDB/PDB)</div>
   </footer>
 
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
 </body>
 </html>

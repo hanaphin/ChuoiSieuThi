@@ -123,6 +123,124 @@ const state = {
   auditLogs: [
     { ma_log: 1, ma_cn: 'CN_Q1', ma_sp: 'SP001', loai_gd: 'BAN_HANG', so_luong: -1, ton_truoc: 46, ton_sau: 45, chung_tu: 'HD_Q1_001', thoi_gian: new Date().toISOString() },
     { ma_log: 2, ma_cn: 'CN_Q7', ma_sp: 'SP007', loai_gd: 'BAN_HANG', so_luong: -1, ton_truoc: 5, ton_sau: 4, chung_tu: 'HD_Q7_001', thoi_gian: new Date().toISOString() }
+  ],
+  // DANH SÁCH 5 ROLES THEO CHUẨN ORACLE 23ai MULTITENANT
+  roles: [
+    {
+      role_name: 'c##role_quan_tri_chuoi',
+      display_name: 'Quản Trị Viên Chuỗi (IT Admin)',
+      type: 'COMMON_ROLE',
+      scope: 'CDB$ROOT (Toàn hệ thống)',
+      description: 'Toàn quyền cấu hình container, quản trị PDBs, phân quyền người dùng'
+    },
+    {
+      role_name: 'c##role_ban_giam_doc',
+      display_name: 'Ban Giám Đốc (Auditor / Executive)',
+      type: 'COMMON_ROLE',
+      scope: 'CDB$ROOT (Toàn hệ thống)',
+      description: 'Chỉ đọc, xem báo cáo Cross-PDB doanh thu và đối soát toàn chuỗi'
+    },
+    {
+      role_name: 'ROLE_QUAN_LY_CHI_NHANH',
+      display_name: 'Cửa Hàng Trưởng (Store Manager)',
+      type: 'LOCAL_ROLE',
+      scope: 'Local PDB (Chi nhánh sở tại)',
+      description: 'Quản lý toàn bộ vận hành hàng hóa, duyệt điều chuyển kho, xem hóa đơn chi nhánh'
+    },
+    {
+      role_name: 'ROLE_THU_NGAN',
+      display_name: 'Nhân Viên Thu Ngân (Cashier POS)',
+      type: 'LOCAL_ROLE',
+      scope: 'Local PDB (Chi nhánh sở tại)',
+      description: 'Thực thi SP_TAO_HOADON, bán hàng, không được tự ý sửa tồn kho'
+    },
+    {
+      role_name: 'ROLE_NHAN_VIEN_KHO',
+      display_name: 'Thủ Kho Chi Nhánh (Inventory Keeper)',
+      type: 'LOCAL_ROLE',
+      scope: 'Local PDB (Chi nhánh sở tại)',
+      description: 'Thực thi SP_NHAP_KHO, SP_DIEUCHUYEN_KHO, theo dõi bảng LICHSU_TONKHO'
+    }
+  ],
+  // DANH SÁCH TÀI KHOẢN NGƯỜI DÙNG MẪU ĐỒNG BỘ VỚI FILE 07_create_roles_privileges.sql
+  users: [
+    { 
+      username: 'c##admin_it', 
+      password: 'ITAdmin2026#',
+      fullname: 'Nguyễn Văn An', 
+      chuc_vu: 'Trưởng Phòng CNTT Chuỗi (IT Head)', 
+      role: 'c##role_quan_tri_chuoi', 
+      role_display: 'Quản Trị Viên Chuỗi',
+      type: 'COMMON_ROLE', 
+      container: 'CDB$ROOT', 
+      ma_cn: null 
+    },
+    { 
+      username: 'c##giam_doc', 
+      password: 'Director2026#',
+      fullname: 'Lê Hoàng Minh', 
+      chuc_vu: 'Tổng Giám Đốc Chuỗi Siêu Thị', 
+      role: 'c##role_ban_giam_doc', 
+      role_display: 'Ban Giám Đốc',
+      type: 'COMMON_ROLE', 
+      container: 'CDB$ROOT', 
+      ma_cn: null 
+    },
+    { 
+      username: 'q1_quanly', 
+      password: 'Q1Manager2026#',
+      fullname: 'Trần Minh Tâm', 
+      chuc_vu: 'Cửa Hàng Trưởng Siêu Thị Q1', 
+      role: 'ROLE_QUAN_LY_CHI_NHANH', 
+      role_display: 'Quản Lý Chi Nhánh',
+      type: 'LOCAL_ROLE', 
+      container: 'pdb_quan1', 
+      ma_cn: 'CN_Q1' 
+    },
+    { 
+      username: 'q1_thungan01', 
+      password: 'Q1Cashier2026#',
+      fullname: 'Phạm Thu Hà', 
+      chuc_vu: 'Nhân Viên Thu Ngân POS Q1', 
+      role: 'ROLE_THU_NGAN', 
+      role_display: 'Thu Ngân POS',
+      type: 'LOCAL_ROLE', 
+      container: 'pdb_quan1', 
+      ma_cn: 'CN_Q1' 
+    },
+    { 
+      username: 'q1_thukho01', 
+      password: 'Q1Keeper2026#',
+      fullname: 'Đỗ Tuấn Kiệt', 
+      chuc_vu: 'Thủ Kho Siêu Thị Q1', 
+      role: 'ROLE_NHAN_VIEN_KHO', 
+      role_display: 'Thủ Kho Chi Nhánh',
+      type: 'LOCAL_ROLE', 
+      container: 'pdb_quan1', 
+      ma_cn: 'CN_Q1' 
+    },
+    { 
+      username: 'q7_thungan01', 
+      password: 'Q7Cashier2026#',
+      fullname: 'Ngô Thảo My', 
+      chuc_vu: 'Nhân Viên Thu Ngân POS Q7', 
+      role: 'ROLE_THU_NGAN', 
+      role_display: 'Thu Ngân POS',
+      type: 'LOCAL_ROLE', 
+      container: 'pdb_quan7', 
+      ma_cn: 'CN_Q7' 
+    },
+    { 
+      username: 'td_thungan01', 
+      password: 'TDCashier2026#',
+      fullname: 'Vũ Đức Thịnh', 
+      chuc_vu: 'Nhân Viên Thu Ngân POS Thủ Đức', 
+      role: 'ROLE_THU_NGAN', 
+      role_display: 'Thu Ngân POS',
+      type: 'LOCAL_ROLE', 
+      container: 'pdb_thuduc', 
+      ma_cn: 'CN_TD' 
+    }
   ]
 };
 

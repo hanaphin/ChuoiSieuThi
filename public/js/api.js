@@ -90,5 +90,38 @@ const API = {
   async getTopProducts() {
     const res = await fetch(`${API_BASE}/reports/top-products`);
     return await res.json();
+  },
+
+  // Lấy danh sách Roles
+  async getRoles() {
+    const res = await fetch(`${API_BASE}/roles`);
+    return await res.json();
+  },
+
+  // Lấy danh sách Users
+  async getUsers() {
+    const res = await fetch(`${API_BASE}/users`);
+    return await res.json();
+  },
+
+  // Quản lý Role / User session trên Client
+  getCurrentUser() {
+    const stored = localStorage.getItem('megamart_user');
+    if (stored) {
+      try { return JSON.parse(stored); } catch (e) {}
+    }
+    // Mặc định là Quản trị chuỗi
+    return {
+      username: 'c##admin_it',
+      fullname: 'Nguyễn Văn An (IT Head)',
+      role: 'c##role_quan_tri_chuoi',
+      container: 'CDB$ROOT',
+      role_name: 'Quản Trị Viên Chuỗi (IT Admin)',
+      type: 'COMMON_ROLE'
+    };
+  },
+
+  setCurrentUser(user) {
+    localStorage.setItem('megamart_user', JSON.stringify(user));
   }
 };

@@ -45,7 +45,27 @@ function getBranchById(req, res) {
   res.json({ success: true, data: branch });
 }
 
+// Lấy danh sách Roles (Common Roles & Local Roles)
+function getRoles(req, res) {
+  res.json({
+    success: true,
+    total: state.roles.length,
+    data: state.roles
+  });
+}
+
+// Lấy danh sách Người dùng mẫu theo từng Role
+function getUsers(req, res) {
+  res.json({
+    success: true,
+    total: state.users.length,
+    data: state.users
+  });
+}
+
 module.exports = {
   getBranches,
-  getBranchById
+  getBranchById,
+  getRoles,
+  getUsers
 };

@@ -31,7 +31,8 @@ c:\ChuoiSieuThi\
 │   ├── 03_packages_procedures.sql # Package PKG_QUANLY_BANHANG, 3 Procedures, 2 Functions có Exception
 │   ├── 04_triggers.sql       # 2 Triggers: TRG_CHECK_TONKHO_BEFORE_BAN & TRG_UPDATE_TONKHO_AFTER_BAN
 │   ├── 05_cross_pdb_reports.sql # Truy vấn Cross-PDB bằng mệnh đề CONTAINERS()
-│   └── 06_seed_data.sql      # Bộ dữ liệu mẫu phong phú
+│   ├── 06_seed_data.sql      # Bộ dữ liệu mẫu phong phú
+│   └── 07_create_roles_privileges.sql # Thiết lập 5 Roles (Common & Local Roles) chuẩn Least Privilege
 ├── src/                      # Tầng API Back-end
 │   ├── config/db.js          # Kết nối CSDL Oracle 23ai / Mô phỏng PDB state
 │   ├── controllers/          # Bộ điều khiển nghiệp vụ (Branch, Product, Inventory, Order, Report)

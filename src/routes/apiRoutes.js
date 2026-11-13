@@ -6,10 +6,17 @@ const productController = require('../controllers/productController');
 const inventoryController = require('../controllers/inventoryController');
 const orderController = require('../controllers/orderController');
 const reportController = require('../controllers/reportController');
+const authController = require('../controllers/authController');
+
+// 0. Xác thực & Đăng nhập
+router.post('/auth/login', authController.login);
+router.get('/auth/profile', authController.getProfile);
 
 // 1. Chi nhánh & PDB
 router.get('/branches', branchController.getBranches);
 router.get('/branches/:id', branchController.getBranchById);
+router.get('/roles', branchController.getRoles);
+router.get('/users', branchController.getUsers);
 
 // 2. Danh mục & Sản phẩm
 router.get('/categories', productController.getCategories);
