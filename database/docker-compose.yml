@@ -1,0 +1,16 @@
+services:
+  oracle23ai:
+    image: container-registry.oracle.com/database/free:latest
+    container_name: oracle23ai_chuoi_sieuthi
+    ports:
+      - "1521:1521"
+    environment:
+      - ORACLE_PWD=Oracle23ai_Password#
+      - ORACLE_CHARACTERSET=AL32UTF8
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+      - ./scripts:/docker-entrypoint-initdb.d/startup
+    restart: always
+
+volumes:
+  oracle_data:

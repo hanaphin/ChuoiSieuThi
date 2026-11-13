@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POS Bán Hàng Chi Nhánh | Oracle Database 23ai</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">
+      <i class="fa-solid fa-store" style="color: #60a5fa;"></i>
+      <span>MegaMart POS</span>
+      <span class="badge-tech">Giao dịch Local PDB</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link"><i class="fa-solid fa-chart-line"></i> Tổng quan</a>
+      <a href="pos.html" class="nav-link active"><i class="fa-solid fa-cash-register"></i> Bán hàng (POS)</a>
+      <a href="inventory.html" class="nav-link"><i class="fa-solid fa-boxes-stacked"></i> Kho PDB</a>
+      <a href="reports.html" class="nav-link"><i class="fa-solid fa-file-invoice-dollar"></i> Báo cáo Cross-PDB</a>
+      <a href="architecture.html" class="nav-link" style="color: #38bdf8;"><i class="fa-solid fa-network-wired"></i> Kiến trúc & Vấn đáp</a>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="container">
+    
+    <!-- TOP TOOLBAR: CHỌN CHI NHÁNH PDB -->
+    <div style="background: white; border: 1px solid var(--border); border-radius: 0.75rem; padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <label style="font-weight: 700; color: var(--secondary); display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-database" style="color: var(--primary);"></i> Chi Nhánh Làm Việc (PDB):
+        </label>
+        <select id="select-branch" class="form-control" style="width: 280px; font-weight: 600;" onchange="changeBranch()">
+          <!-- Options động -->
+        </select>
+        <span id="current-pdb-badge" class="pdb-tag" style="padding: 6px 12px; font-size: 0.85rem;">PDB: pdb_quan1</span>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <input type="text" id="search-input" placeholder="Tìm tên mặt hàng hoặc mã barcode..." class="form-control" style="width: 260px;" oninput="filterProducts()">
+        <select id="select-category" class="form-control" style="width: 200px;" onchange="filterProducts()">
+          <option value="">Tất cả ngành hàng</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- THÔNG BÁO TRIGGER / PLSQL FEEDBACK -->
+    <div id="trigger-alert" style="display: none;" class="alert"></div>
+
+    <!-- POS LAYOUT -->
+    <div class="pos-layout">
+      
+      <!-- DANH SÁCH MẶT HÀNG -->
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--secondary);">
+            <i class="fa-solid fa-basket-shopping"></i> Danh Mục Mặt Hàng Tại Chi Nhánh
+          </h2>
+          <span id="product-count" style="font-size: 0.85rem; color: var(--text-muted);">10 mặt hàng</span>
+        </div>
+
+        <div class="product-grid" id="product-grid-container">
+          <!-- Sẽ nạp động sản phẩm -->
+        </div>
+      </div>
+
+      <!-- GIỎ HÀNG & THANH TOÁN (ORDER DRAWER) -->
+      <div>
+        <div class="cart-box">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--secondary);">
+              <i class="fa-solid fa-cart-shopping" style="color: var(--primary);"></i> Đơn Hàng Hiện Tại
+            </h3>
+            <button onclick="clearCart()" class="btn btn-outline" style="font-size: 0.75rem; padding: 3px 8px;">
+              <i class="fa-solid fa-trash-can"></i> Xoá hết
+            </button>
+          </div>
+
+          <div style="margin-top: 0.75rem;">
+            <div class="form-group" style="margin-bottom: 0.5rem;">
+              <label><i class="fa-solid fa-user"></i> Tên khách hàng:</label>
+              <input type="text" id="cust-name" class="form-control" value="Khách mua lẻ" style="padding: 0.4rem 0.6rem;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0.5rem;">
+              <label><i class="fa-solid fa-credit-card"></i> Phương thức:</label>
+              <select id="cust-payment" class="form-control" style="padding: 0.4rem 0.6rem;">
+                <option value="TIEN_MAT">Tiền mặt</option>
+                <option value="CHUYEN_KHOAN">Chuyển khoản (VietQR)</option>
+                <option value="THE">Thẻ tín dụng / ATM</option>
+                <option value="VI_DIEN_TU">Ví điện tử (Momo / ZaloPay)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="cart-items" id="cart-items-list">
+            <div style="text-align: center; color: var(--text-muted); padding: 2rem 0; font-size: 0.9rem;">
+              <i class="fa-solid fa-cart-arrow-down fa-2x" style="opacity: 0.3; margin-bottom: 0.5rem; display: block;"></i>
+              Chưa có sản phẩm trong giỏ.<br>Bấm vào mặt hàng bên trái để chọn!
+            </div>
+          </div>
+
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem;">
+              <span>Tổng thanh toán:</span>
+              <span id="cart-total-amount" style="color: #059669;">0 đ</span>
+            </div>
+
+            <button onclick="submitOrder()" id="btn-checkout" class="btn btn-success" style="width: 100%; padding: 0.75rem; font-size: 1rem;" disabled>
+              <i class="fa-solid fa-check"></i> Thanh Toán (Gọi SP_TAO_HOADON)
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- MODAL HOÁ ĐƠN THÀNH CÔNG -->
+  <div class="modal-overlay" id="invoice-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 style="color: #059669; font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-circle-check"></i> Thanh Toán Thành Công!
+        </h3>
+        <button onclick="closeModal()" style="border: none; background: transparent; font-size: 1.25rem; cursor: pointer;">&times;</button>
+      </div>
+      <div id="modal-invoice-content" style="font-size: 0.875rem; line-height: 1.6;">
+        <!-- Chi tiết hoá đơn -->
+      </div>
+      <div style="margin-top: 1.25rem; text-align: right;">
+        <button onclick="closeModal()" class="btn btn-primary">Xác nhận & Tiếp tục</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div style="margin-bottom: 0.5rem; font-weight: 600; color: #f1f5f9;">
+      Đồ án Quản trị Cơ sở Dữ liệu (Oracle Database 23ai) - HUFLIT 2026
+    </div>
+    <div>Đề tài 1: Hệ thống Quản lý Chuỗi Siêu Thị Đa Chi Nhánh (Multitenant CDB/PDB)</div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script>
+    let currentBranch = 'CN_Q1';
+    let currentProducts = [];
+    let cart = [];
+
+    function formatMoney(num) {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(num);
+    }
+
+    async function initPOS() {
+      // Đọc query param nếu có
+      const urlParams = new URLSearchParams(window.location.search);
+      const bParam = urlParams.get('branch');
+      if (bParam) currentBranch = bParam;
+
+      // Nạp danh mục
+      const catData = await API.getCategories();
+      if (catData.success) {
+        const catSelect = document.getElementById('select-category');
+        catSelect.innerHTML = `<option value="">Tất cả ngành hàng</option>` +
+          catData.data.map(c => `<option value="${c.ma_dm}">${c.ten_dm}</option>`).join('');
+      }
+
+      // Nạp chi nhánh
+      const branchData = await API.getBranches();
+      if (branchData.success) {
+        const branchSelect = document.getElementById('select-branch');
+        branchSelect.innerHTML = branchData.data.map(b => `
+          <option value="${b.ma_cn}" ${b.ma_cn === currentBranch ? 'selected' : ''}>
+            ${b.ten_cn} (${b.pdb_name})
+          </option>
+        `).join('');
+
+        const selected = branchData.data.find(b => b.ma_cn === currentBranch) || branchData.data[0];
+        currentBranch = selected.ma_cn;
+        document.getElementById('current-pdb-badge').innerHTML = `<i class="fa-solid fa-database"></i> PDB: ${selected.pdb_name}`;
+      }
+
+      await loadProducts();
+    }
+
+    async function changeBranch() {
+      currentBranch = document.getElementById('select-branch').value;
+      const branchData = await API.getBranches();
+      const b = branchData.data.find(x => x.ma_cn === currentBranch);
+      if (b) {
+        document.getElementById('current-pdb-badge').innerHTML = `<i class="fa-solid fa-database"></i> PDB: ${b.pdb_name}`;
+      }
+      cart = [];
+      updateCartUI();
+      hideAlert();
+      await loadProducts();
+    }
+
+    async function loadProducts() {
+      const search = document.getElementById('search-input').value;
+      const cat = document.getElementById('select-category').value;
+      const res = await API.getProducts(currentBranch, cat, search);
+      if (res.success) {
+        currentProducts = res.data;
+        renderProducts(res.data);
+      }
+    }
+
+    function filterProducts() {
+      loadProducts();
+    }
+
+    function renderProducts(list) {
+      document.getElementById('product-count').innerText = `${list.length} mặt hàng`;
+      const container = document.getElementById('product-grid-container');
+
+      if (list.length === 0) {
+        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted);">Không tìm thấy mặt hàng nào phù hợp!</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(p => {
+        const isOutOfStock = p.stock_at_branch <= 0;
+        return `
+          <div class="product-card ${isOutOfStock ? 'out-of-stock' : ''}" onclick="addToCart('${p.ma_sp}')">
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">${p.barcode}</div>
+              <h4 style="font-size: 0.95rem; font-weight: 600; margin: 0.35rem 0 0.5rem; line-height: 1.3;">${p.ten_sp}</h4>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">${p.ten_dm} | ĐVT: ${p.don_vi_tinh}</div>
+            </div>
+
+            <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: flex-end;">
+              <div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: var(--primary);">${formatMoney(p.gia_niem_yet)}</div>
+                <div style="font-size: 0.75rem; color: ${p.is_low_stock ? 'var(--danger)' : 'var(--text-muted)'}; font-weight: 600;">
+                  Tồn kho: ${p.stock_at_branch} ${p.don_vi_tinh}
+                </div>
+              </div>
+              <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.75rem;" ${isOutOfStock ? 'disabled' : ''}>
+                <i class="fa-solid fa-cart-plus"></i> Chọn
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function addToCart(ma_sp) {
+      hideAlert();
+      const product = currentProducts.find(p => p.ma_sp === ma_sp);
+      if (!product) return;
+
+      const existing = cart.find(c => c.ma_sp === ma_sp);
+      if (existing) {
+        existing.so_luong += 1;
+      } else {
+        cart.push({
+          ma_sp: product.ma_sp,
+          ten_sp: product.ten_sp,
+          don_gia: product.gia_niem_yet,
+          so_luong: 1,
+          stock: product.stock_at_branch
+        });
+      }
+      updateCartUI();
+    }
+
+    function changeQty(ma_sp, delta) {
+      hideAlert();
+      const item = cart.find(c => c.ma_sp === ma_sp);
+      if (!item) return;
+
+      item.so_luong += delta;
+      if (item.so_luong <= 0) {
+        cart = cart.filter(c => c.ma_sp !== ma_sp);
+      }
+      updateCartUI();
+    }
+
+    function clearCart() {
+      cart = [];
+      updateCartUI();
+      hideAlert();
+    }
+
+    function updateCartUI() {
+      const container = document.getElementById('cart-items-list');
+      const checkoutBtn = document.getElementById('btn-checkout');
+      const totalDisplay = document.getElementById('cart-total-amount');
+
+      if (cart.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; color: var(--text-muted); padding: 2rem 0; font-size: 0.9rem;">
+            <i class="fa-solid fa-cart-arrow-down fa-2x" style="opacity: 0.3; margin-bottom: 0.5rem; display: block;"></i>
+            Chưa có sản phẩm trong giỏ.<br>Bấm vào mặt hàng bên trái để chọn!
+          </div>
+        `;
+        totalDisplay.innerText = '0 đ';
+        checkoutBtn.disabled = true;
+        return;
+      }
+
+      let total = 0;
+      container.innerHTML = cart.map(item => {
+        const itemTotal = item.don_gia * item.so_luong;
+        total += itemTotal;
+        return `
+          <div class="cart-item">
+            <div style="flex: 1; padding-right: 0.5rem;">
+              <div style="font-weight: 600; font-size: 0.85rem; line-height: 1.3;">${item.ten_sp}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">${formatMoney(item.don_gia)} x ${item.so_luong}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.35rem;">
+              <button onclick="changeQty('${item.ma_sp}', -1)" style="width: 24px; height: 24px; border: 1px solid var(--border); border-radius: 4px; background: white; cursor: pointer;">-</button>
+              <span style="font-weight: 700; font-size: 0.85rem; min-width: 20px; text-align: center;">${item.so_luong}</span>
+              <button onclick="changeQty('${item.ma_sp}', 1)" style="width: 24px; height: 24px; border: 1px solid var(--border); border-radius: 4px; background: white; cursor: pointer;">+</button>
+            </div>
+            <div style="min-width: 75px; text-align: right; font-weight: 700; font-size: 0.85rem; color: var(--primary);">
+              ${formatMoney(itemTotal)}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      totalDisplay.innerText = formatMoney(total);
+      checkoutBtn.disabled = false;
+    }
+
+    async function submitOrder() {
+      if (cart.length === 0) return;
+
+      const custName = document.getElementById('cust-name').value || 'Khách lẻ';
+      const custPayment = document.getElementById('cust-payment').value;
+
+      const orderPayload = {
+        ma_cn: currentBranch,
+        thu_ngan: 'Thu ngân ' + currentBranch,
+        ten_kh: custName,
+        phuong_thuc: custPayment,
+        items: cart.map(c => ({ ma_sp: c.ma_sp, so_luong: c.so_luong }))
+      };
+
+      try {
+        const res = await API.createOrder(orderPayload);
+
+        if (res.success) {
+          // Thành công
+          showModal(res.data, res.plsql_info);
+          cart = [];
+          updateCartUI();
+          await loadProducts(); // Cập nhật lại số lượng tồn kho hiển thị
+        } else {
+          // Bị Trigger ORA-20007 chặn lại hoặc exception
+          showAlert('danger', res.message);
+        }
+      } catch (err) {
+        showAlert('danger', 'Lỗi hệ thống: ' + err.message);
+      }
+    }
+
+    function showAlert(type, msg) {
+      const alertBox = document.getElementById('trigger-alert');
+      alertBox.className = `alert alert-${type}`;
+      alertBox.innerHTML = `
+        <i class="fa-solid fa-triangle-exclamation fa-lg"></i>
+        <div>
+          <strong>Thông báo từ Oracle 23ai Engine:</strong><br>
+          ${msg}
+        </div>
+      `;
+      alertBox.style.display = 'flex';
+    }
+
+    function hideAlert() {
+      document.getElementById('trigger-alert').style.display = 'none';
+    }
+
+    function showModal(invoice, plsqlInfo) {
+      const modal = document.getElementById('invoice-modal');
+      const content = document.getElementById('modal-invoice-content');
+
+      content.innerHTML = `
+        <div style="background: #f8fafc; border: 1px dashed var(--border); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+            <span>Mã hoá đơn:</span><strong>${invoice.ma_hd}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+            <span>Chi nhánh / PDB:</span><strong>${invoice.ma_cn} (${invoice.pdb_name})</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+            <span>Khách hàng:</span><span>${invoice.ten_kh}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+            <span>Phương thức:</span><span class="badge badge-info">${invoice.phuong_thuc}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border); font-size: 1rem;">
+            <span>Tổng cộng:</span><strong style="color: #059669;">${formatMoney(invoice.tong_tien)}</strong>
+          </div>
+        </div>
+
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.5rem; padding: 0.75rem; font-size: 0.8rem; color: #1e40af;">
+          <strong><i class="fa-solid fa-microchip"></i> Oracle 23ai PL/SQL Execution:</strong><br>
+          • Procedure thực thi: <code>${plsqlInfo ? plsqlInfo.procedure : 'PKG_QUANLY_BANHANG.SP_TAO_HOADON'}</code><br>
+          • Triggers đã kích hoạt: <code>TRG_CHECK_TONKHO_BEFORE_BAN</code>, <code>TRG_UPDATE_TONKHO_AFTER_BAN</code><br>
+          • Bảng kiểm toán: Tự động ghi nhật ký biến động vào <code>LICHSU_TONKHO</code>.
+        </div>
+      `;
+
+      modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('invoice-modal').style.display = 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', initPOS);
+  </script>
+</body>
+</html>

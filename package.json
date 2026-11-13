@@ -1,0 +1,26 @@
+{
+  "name": "chuoi-sieu-thi-multitenant",
+  "version": "1.0.0",
+  "description": "Hệ thống quản lý chuỗi siêu thị đa chi nhánh - Oracle Database 23ai Multitenant (CDB/PDB)",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "oracle-23ai",
+    "multitenant",
+    "supermarket",
+    "cdb",
+    "pdb"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "oracledb": "^6.5.0"
+  }
+}

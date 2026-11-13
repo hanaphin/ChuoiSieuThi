@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Báo Cáo Cross-PDB Hợp Nhất | Oracle Database 23ai</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">
+      <i class="fa-solid fa-store" style="color: #60a5fa;"></i>
+      <span>MegaMart Báo Cáo</span>
+      <span class="badge-tech">Cross-PDB Reporting</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link"><i class="fa-solid fa-chart-line"></i> Tổng quan</a>
+      <a href="pos.html" class="nav-link"><i class="fa-solid fa-cash-register"></i> Bán hàng (POS)</a>
+      <a href="inventory.html" class="nav-link"><i class="fa-solid fa-boxes-stacked"></i> Kho PDB</a>
+      <a href="reports.html" class="nav-link active"><i class="fa-solid fa-file-invoice-dollar"></i> Báo cáo Cross-PDB</a>
+      <a href="architecture.html" class="nav-link" style="color: #38bdf8;"><i class="fa-solid fa-network-wired"></i> Kiến trúc & Vấn đáp</a>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="container">
+    
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><i class="fa-solid fa-chart-pie" style="color: var(--primary);"></i> Báo Cáo Hợp Nhất Xuyên Suốt Các PDB (Cross-PDB)</h1>
+        <p class="page-subtitle">Truy vấn từ <strong>CDB$ROOT</strong> bằng Common User <code>c##admin_chuoi</code> sử dụng mệnh đề <code>CONTAINERS()</code> của Oracle 23ai</p>
+      </div>
+      <div>
+        <button onclick="loadAllReports()" class="btn btn-primary"><i class="fa-solid fa-rotate"></i> Làm Mới Dữ Liệu</button>
+      </div>
+    </div>
+
+    <!-- SQL EXPLANATION CALLOUT -->
+    <div style="background: #1e293b; color: #f8fafc; border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 1.5rem; font-family: monospace; font-size: 0.85rem; line-height: 1.6;">
+      <div style="color: #38bdf8; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-solid fa-terminal"></i> Câu truy vấn Oracle 23ai thực thi tại tầng CSDL:
+      </div>
+      <span style="color: #ec4899;">SELECT</span> c.CON_ID, CON_ID_TO_CON_NAME(c.CON_ID) <span style="color: #ec4899;">AS</span> TEN_PDB, c.MA_CN, <span style="color: #38bdf8;">SUM</span>(c.TONG_TIEN) <span style="color: #ec4899;">AS</span> DOANH_THU<br>
+      <span style="color: #ec4899;">FROM</span> <span style="color: #facc15; font-weight: 700;">CONTAINERS(HOADON)</span> c<br>
+      <span style="color: #ec4899;">WHERE</span> c.TRANG_THAI = <span style="color: #a7f3d0;">'DA_THANH_TOAN'</span><br>
+      <span style="color: #ec4899;">GROUP BY</span> c.CON_ID, c.MA_CN;
+    </div>
+
+    <!-- REVENUE BREAKDOWN & TOP PRODUCTS (2 COLS) -->
+    <div class="grid-cols-2">
+      
+      <!-- CỘT 1: DOANH THU THEO TỪNG PDB -->
+      <div class="table-container" style="margin-bottom: 0;">
+        <div class="table-header">
+          <h3 style="font-size: 1rem; font-weight: 700; color: var(--secondary);">
+            <i class="fa-solid fa-coins" style="color: var(--warning);"></i> Doanh Thu Theo Từng PDB
+          </h3>
+        </div>
+        <div style="padding: 1.25rem;" id="revenue-bars-container">
+          <!-- Bars động -->
+        </div>
+      </div>
+
+      <!-- CỘT 2: TOP 5 SẢN PHẨM BÁN CHẠY TOÀN CHUỖI -->
+      <div class="table-container" style="margin-bottom: 0;">
+        <div class="table-header">
+          <h3 style="font-size: 1rem; font-weight: 700; color: var(--secondary);">
+            <i class="fa-solid fa-fire" style="color: var(--danger);"></i> Top Mặt Hàng Bán Chạy Toàn Chuỗi
+          </h3>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Mệnh đề CONTAINERS(CTHOADON)</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Sản Phẩm</th>
+              <th>Đã Bán</th>
+              <th>Doanh Thu</th>
+            </tr>
+          </thead>
+          <tbody id="top-products-body">
+            <tr><td colspan="3" style="text-align: center; padding: 1.5rem;">Đang tải top sản phẩm...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- CROS-PDB INVENTORY COMPARISON TABLE -->
+    <div class="table-container" style="margin-top: 1.5rem;">
+      <div class="table-header">
+        <div>
+          <h3 style="font-size: 1rem; font-weight: 700; color: var(--secondary);">
+            <i class="fa-solid fa-code-compare" style="color: var(--primary);"></i> Bảng So Sánh Tồn Kho Chéo Giữa Các Chi Nhánh (Cross-PDB Pivot)
+          </h3>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">
+            Giúp Ban điều hành phát hiện chi nhánh thiếu hàng để kích hoạt Procedure điều chuyển kịp thời
+          </span>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Mã SP</th>
+            <th>Tên Mặt Hàng</th>
+            <th>Giá Bán</th>
+            <th style="background: #eff6ff; color: #1e40af;"><i class="fa-solid fa-database"></i> PDB Quận 1</th>
+            <th style="background: #faf5ff; color: #6b21a8;"><i class="fa-solid fa-database"></i> PDB Quận 7</th>
+            <th style="background: #ecfeff; color: #155e75;"><i class="fa-solid fa-database"></i> PDB Thủ Đức</th>
+            <th>Tổng Toàn Chuỗi</th>
+            <th>Đánh Giá Điều Chuyển</th>
+          </tr>
+        </thead>
+        <tbody id="cross-stock-body">
+          <tr><td colspan="8" style="text-align: center; padding: 2rem;">Đang nạp bảng so sánh Cross-PDB...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div style="margin-bottom: 0.5rem; font-weight: 600; color: #f1f5f9;">
+      Đồ án Quản trị Cơ sở Dữ liệu (Oracle Database 23ai) - HUFLIT 2026
+    </div>
+    <div>Đề tài 1: Hệ thống Quản lý Chuỗi Siêu Thị Đa Chi Nhánh (Multitenant CDB/PDB)</div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script>
+    function formatMoney(num) {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(num);
+    }
+
+    async function loadAllReports() {
+      // 1. Doanh thu Cross-PDB
+      const revRes = await API.getCrossPdbRevenue();
+      if (revRes.success) {
+        const container = document.getElementById('revenue-bars-container');
+        const total = revRes.summary.tong_doanh_thu_toan_chuoi || 1;
+
+        container.innerHTML = revRes.branch_breakdown.map(b => {
+          const percent = Math.round((b.doanh_thu / total) * 100);
+          return `
+            <div style="margin-bottom: 1.25rem;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem; font-size: 0.9rem;">
+                <strong>${b.ten_cn} (${b.pdb_name})</strong>
+                <span style="font-weight: 700; color: var(--primary);">${formatMoney(b.doanh_thu)} (${percent}%)</span>
+              </div>
+              <div style="height: 12px; background: #e2e8f0; border-radius: 9999px; overflow: hidden;">
+                <div style="height: 100%; width: ${percent}%; background: linear-gradient(90deg, #3b82f6, #1d4ed8); border-radius: 9999px;"></div>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                ${b.so_luong_don} hoá đơn | Trung bình đơn: ${formatMoney(b.gia_tri_tb)}
+              </div>
+            </div>
+          `;
+        }).join('') + `
+          <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--border); display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 700;">
+            <span>Tổng Doanh Thu Toàn Hệ Thống:</span>
+            <span style="color: #059669;">${formatMoney(revRes.summary.tong_doanh_thu_toan_chuoi)}</span>
+          </div>
+        `;
+      }
+
+      // 2. Top sản phẩm bán chạy
+      const topRes = await API.getTopProducts();
+      if (topRes.success) {
+        const tbody = document.getElementById('top-products-body');
+        if (topRes.data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Chưa có dữ liệu bán</td></tr>`;
+        } else {
+          tbody.innerHTML = topRes.data.map(p => `
+            <tr>
+              <td><strong>${p.ten_sp}</strong><br><small style="color: var(--text-muted);">${p.ma_sp}</small></td>
+              <td><span class="badge badge-info">${p.so_luong_ban} món</span></td>
+              <td><strong style="color: #059669;">${formatMoney(p.doanh_thu)}</strong></td>
+            </tr>
+          `).join('');
+        }
+      }
+
+      // 3. So sánh tồn kho Cross-PDB
+      const stockRes = await API.getCrossPdbInventory();
+      if (stockRes.success) {
+        const tbody = document.getElementById('cross-stock-body');
+        tbody.innerHTML = stockRes.data.map(item => {
+          let advice = '<span class="badge badge-success"><i class="fa-solid fa-check"></i> Cân đối</span>';
+          if (item.ton_pdb_quan7 <= 5 && item.ton_pdb_quan1 >= 30) {
+            advice = '<span class="badge badge-warning"><i class="fa-solid fa-arrow-right"></i> Nên chuyển từ Q1 -> Q7</span>';
+          } else if (item.ton_pdb_thuduc <= 5 && item.ton_pdb_quan1 >= 30) {
+            advice = '<span class="badge badge-warning"><i class="fa-solid fa-arrow-right"></i> Nên chuyển từ Q1 -> Thủ Đức</span>';
+          } else if (item.canh_bao) {
+            advice = '<span class="badge badge-danger"><i class="fa-solid fa-triangle-exclamation"></i> Cần nhập thêm</span>';
+          }
+
+          return `
+            <tr>
+              <td><strong>${item.ma_sp}</strong></td>
+              <td><strong>${item.ten_sp}</strong></td>
+              <td>${formatMoney(item.gia_niem_yet)}</td>
+              <td style="background: #f8fafc; font-weight: 700; color: #1e40af; text-align: center;">${item.ton_pdb_quan1}</td>
+              <td style="background: #faf5ff; font-weight: 700; color: #6b21a8; text-align: center;">${item.ton_pdb_quan7}</td>
+              <td style="background: #ecfeff; font-weight: 700; color: #155e75; text-align: center;">${item.ton_pdb_thuduc}</td>
+              <td style="font-weight: 700; text-align: center; font-size: 1rem;">${item.tong_ton_toan_chuoi}</td>
+              <td>${advice}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAllReports);
+  </script>
+</body>
+</html>

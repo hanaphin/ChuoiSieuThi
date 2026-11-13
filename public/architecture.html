@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sơ Đồ Kiến Trúc & Hướng Dẫn Vấn Đáp | Oracle 23ai</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    .flow-step {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      position: relative;
+    }
+    .flow-arrow {
+      text-align: center;
+      color: var(--primary);
+      font-size: 1.5rem;
+      margin: 0.5rem 0;
+    }
+    .qa-box {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+    .qa-question {
+      padding: 1rem 1.25rem;
+      background: #f8fafc;
+      font-weight: 700;
+      color: var(--secondary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .qa-answer {
+      padding: 1.25rem;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #334155;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">
+      <i class="fa-solid fa-store" style="color: #60a5fa;"></i>
+      <span>MegaMart Kiến Trúc</span>
+      <span class="badge-tech">Tài Liệu Bảo Vệ Đồ Án</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link"><i class="fa-solid fa-chart-line"></i> Tổng quan</a>
+      <a href="pos.html" class="nav-link"><i class="fa-solid fa-cash-register"></i> Bán hàng (POS)</a>
+      <a href="inventory.html" class="nav-link"><i class="fa-solid fa-boxes-stacked"></i> Kho PDB</a>
+      <a href="reports.html" class="nav-link"><i class="fa-solid fa-file-invoice-dollar"></i> Báo cáo Cross-PDB</a>
+      <a href="architecture.html" class="nav-link active" style="color: #38bdf8;"><i class="fa-solid fa-network-wired"></i> Kiến trúc & Vấn đáp</a>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="container">
+    
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><i class="fa-solid fa-diagram-project" style="color: var(--primary);"></i> Sơ Đồ Kiến Trúc Hệ Thống & Bộ Câu Hỏi Vấn Đáp</h1>
+        <p class="page-subtitle">Tài liệu phục vụ thuyết trình và trả lời vấn đáp trực tiếp theo yêu cầu Mục 3.3 và Mục 6 của đề cương đồ án</p>
+      </div>
+      <div>
+        <a href="index.html" class="btn btn-outline"><i class="fa-solid fa-arrow-left"></i> Quay lại Dashboard</a>
+      </div>
+    </div>
+
+    <!-- PHẦN 1: SƠ ĐỒ LUỒNG DỮ LIỆU 3 TẦNG (YÊU CẦU MỤC 3.3) -->
+    <div class="table-container" style="padding: 1.5rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem; color: var(--secondary);">
+        <i class="fa-solid fa-layer-group"></i> 1. Luồng Dữ Liệu 3 Tầng: Giao Diện (UI) &harr; Lớp API &harr; Oracle Database 23ai
+      </h2>
+
+      <div class="grid-cols-3" style="margin-bottom: 0;">
+        
+        <!-- TẦNG 1: FRONTEND -->
+        <div class="flow-step" style="border-top: 4px solid #3b82f6;">
+          <div style="font-size: 0.8rem; font-weight: 700; color: #3b82f6; text-transform: uppercase;">Tầng 1: Trình Duyệt (Web Client)</div>
+          <h4 style="font-size: 1.1rem; margin: 0.4rem 0;">HTML5 / CSS / Vanilla JS</h4>
+          <ul style="font-size: 0.85rem; padding-left: 1.2rem; line-height: 1.6; color: var(--text-muted);">
+            <li>Dashboard tổng quan đa chi nhánh (index.html)</li>
+            <li>Giao diện POS bán hàng chọn PDB (pos.html)</li>
+            <li>Quản lý tồn kho & điều chuyển (inventory.html)</li>
+            <li>Báo cáo hợp nhất Cross-PDB (reports.html)</li>
+            <li>Gọi API qua <code>fetch()</code> bất đồng bộ</li>
+          </ul>
+        </div>
+
+        <!-- TẦNG 2: BACKEND API -->
+        <div class="flow-step" style="border-top: 4px solid #10b981;">
+          <div style="font-size: 0.8rem; font-weight: 700; color: #10b981; text-transform: uppercase;">Tầng 2: Web Server & Lớp API</div>
+          <h4 style="font-size: 1.1rem; margin: 0.4rem 0;">Node.js & Express REST API</h4>
+          <ul style="font-size: 0.85rem; padding-left: 1.2rem; line-height: 1.6; color: var(--text-muted);">
+            <li><code>/api/branches</code>: Trạng thái các PDB</li>
+            <li><code>/api/orders</code>: Tạo hoá đơn bán hàng</li>
+            <li><code>/api/inventory</code>: Quản lý & điều chuyển kho</li>
+            <li><code>/api/reports</code>: Báo cáo hợp nhất CONTAINERS</li>
+            <li>Điều phối kết nối tới đúng PDB của chi nhánh</li>
+          </ul>
+        </div>
+
+        <!-- TẦNG 3: ORACLE 23AI -->
+        <div class="flow-step" style="border-top: 4px solid #ef4444;">
+          <div style="font-size: 0.8rem; font-weight: 700; color: #ef4444; text-transform: uppercase;">Tầng 3: Cơ Sở Dữ Liệu Lõi</div>
+          <h4 style="font-size: 1.1rem; margin: 0.4rem 0;">Oracle 23ai Multitenant</h4>
+          <ul style="font-size: 0.85rem; padding-left: 1.2rem; line-height: 1.6; color: var(--text-muted);">
+            <li><strong>CDB$ROOT</strong>: Quản lý chung, Common User <code>c##admin_chuoi</code></li>
+            <li><strong>PDBs</strong>: <code>pdb_quan1</code>, <code>pdb_quan7</code>, <code>pdb_thuduc</code></li>
+            <li><strong>PL/SQL</strong>: Package <code>PKG_QUANLY_BANHANG</code></li>
+            <li><strong>Triggers</strong>: Kiểm tra tồn kho & trừ tự động</li>
+            <li><strong>Cross-PDB</strong>: Mệnh đề <code>CONTAINERS()</code></li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PHẦN 2: BỘ CÂU HỎI VẤN ĐÁP THEO CHUẨN MỤC 6.3 CỦA ĐỀ CƯƠNG -->
+    <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem; color: var(--secondary);">
+      <i class="fa-solid fa-comments"></i> 2. Bộ Câu Hỏi Vấn Đáp Trọng Tâm (Kèm Gợi Ý Trả Lời)
+    </h2>
+
+    <!-- CÂU 1 -->
+    <div class="qa-box">
+      <div class="qa-question">
+        <i class="fa-solid fa-circle-question" style="color: var(--primary);"></i>
+        <span>Câu 1: Tại sao đề tài lại áp dụng kiến trúc Multitenant (CDB/PDB) cho chuỗi siêu thị thay vì dùng chung 1 Database duy nhất?</span>
+      </div>
+      <div class="qa-answer">
+        <strong>Trả lời:</strong><br>
+        1. <strong>Tính cô lập dữ liệu (Data Isolation):</strong> Mỗi chi nhánh siêu thị là một Pluggable Database (PDB) riêng (<code>pdb_quan1</code>, <code>pdb_quan7</code>, <code>pdb_thuduc</code>). Dữ liệu bán hàng và tồn kho hàng ngày của chi nhánh này không ảnh hưởng đến chi nhánh khác.<br>
+        2. <strong>Tính sẵn sàng và linh hoạt (High Availability & Scalability):</strong> Khi mở rộng chuỗi, ta chỉ cần tạo/cắm (PLUG) thêm một PDB mới mà không cần cài lại toàn bộ hệ điều hành hay Oracle Instance.<br>
+        3. <strong>Báo cáo hợp nhất tập trung (Centralized Reporting):</strong> Tại CDB$ROOT, người quản trị sử dụng Common User (<code>c##admin_chuoi</code>) và mệnh đề <code>CONTAINERS(HOADON)</code> để lấy số liệu doanh thu toàn chuỗi trong 1 câu lệnh duy nhất mà không cần viết script liên kết DB Link phức tạp.
+      </div>
+    </div>
+
+    <!-- CÂU 2 -->
+    <div class="qa-box">
+      <div class="qa-question">
+        <i class="fa-solid fa-circle-question" style="color: var(--primary);"></i>
+        <span>Câu 2: Phân biệt Common User và Local User trong hệ thống của bạn?</span>
+      </div>
+      <div class="qa-answer">
+        <strong>Trả lời:</strong><br>
+        • <strong>Common User (ví dụ <code>c##admin_chuoi</code>):</strong> Được tạo ở <code>CDB$ROOT</code> với tiền tố <code>c##</code> và có hiệu lực trên toàn bộ container (<code>CONTAINER = ALL</code>). Common user được trao quyền xem dữ liệu trên mọi PDB để làm báo cáo hợp nhất toàn chuỗi siêu thị.<br>
+        • <strong>Local User (ví dụ <code>local_q1</code>, <code>local_q7</code>):</strong> Được tạo riêng biệt trong từng PDB và chỉ có quyền truy cập dữ liệu bên trong PDB đó. Thu ngân chi nhánh nào chỉ có tài khoản Local User của chi nhánh đó, đảm bảo bảo mật tuyệt đối.
+      </div>
+    </div>
+
+    <!-- CÂU 3 -->
+    <div class="qa-box">
+      <div class="qa-question">
+        <i class="fa-solid fa-circle-question" style="color: var(--primary);"></i>
+        <span>Câu 3: Giải thích cơ chế hoạt động của Trigger kiểm tra và cập nhật tồn kho khi bán hàng?</span>
+      </div>
+      <div class="qa-answer">
+        <strong>Trả lời:</strong><br>
+        Hệ thống sử dụng 2 trigger chính:<br>
+        1. <strong><code>TRG_CHECK_TONKHO_BEFORE_BAN</code> (BEFORE INSERT ON CTHOADON):</strong> Khi thu ngân thêm sản phẩm vào đơn, trigger sẽ kiểm tra số lượng tồn hiện tại trong bảng <code>TONKHO</code>. Nếu số lượng mua > tồn kho, trigger sẽ gọi <code>RAISE_APPLICATION_ERROR(-20007, 'Lỗi bán hàng: Không đủ tồn kho!')</code>, lập tức hủy giao dịch và ROLLBACK, bảo vệ kho không bị âm.<br>
+        2. <strong><code>TRG_UPDATE_TONKHO_AFTER_BAN</code> (AFTER INSERT ON CTHOADON):</strong> Khi kiểm tra hợp lệ, trigger tự động giảm <code>SO_LUONG_TON</code> và ghi nhật ký kiểm toán vào bảng <code>LICHSU_TONKHO</code> (Audit Log) để phục vụ đối soát.
+      </div>
+    </div>
+
+    <!-- CÂU 4 -->
+    <div class="qa-box">
+      <div class="qa-question">
+        <i class="fa-solid fa-circle-question" style="color: var(--primary);"></i>
+        <span>Câu 4: Mệnh đề CONTAINERS() trong Oracle 23ai hoạt động như thế nào khi truy vấn báo cáo?</span>
+      </div>
+      <div class="qa-answer">
+        <strong>Trả lời:</strong><br>
+        Khi đứng ở phiên làm việc <code>CDB$ROOT</code> bằng Common User, câu lệnh <code>SELECT * FROM CONTAINERS(HOADON)</code> sẽ được Oracle Database tự động phân rã thành các truy vấn con chạy song song trên từng PDB đang mở (<code>pdb_quan1</code>, <code>pdb_quan7</code>, <code>pdb_thuduc</code>). Cột ẩn <code>CON_ID</code> cho biết dòng dữ liệu đó thuộc PDB nào, và hàm <code>CON_ID_TO_CON_NAME(CON_ID)</code> chuyển mã định danh thành tên PDB dễ đọc. Kết quả được gom lại tại CDB$ROOT và trả về cho ứng dụng.
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div style="margin-bottom: 0.5rem; font-weight: 600; color: #f1f5f9;">
+      Đồ án Quản trị Cơ sở Dữ liệu (Oracle Database 23ai) - HUFLIT 2026
+    </div>
+    <div>Đề tài 1: Hệ thống Quản lý Chuỗi Siêu Thị Đa Chi Nhánh (Multitenant CDB/PDB)</div>
+  </footer>
+
+</body>
+</html>

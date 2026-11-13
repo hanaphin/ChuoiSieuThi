@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hệ Thống Quản Lý Chuỗi Siêu Thị Đa Chi Nhánh | Oracle Database 23ai</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">
+      <i class="fa-solid fa-store" style="color: #60a5fa;"></i>
+      <span>MegaMart Multitenant</span>
+      <span class="badge-tech">Oracle 23ai CDB/PDB</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link active"><i class="fa-solid fa-chart-line"></i> Tổng quan</a>
+      <a href="pos.html" class="nav-link"><i class="fa-solid fa-cash-register"></i> Bán hàng (POS)</a>
+      <a href="inventory.html" class="nav-link"><i class="fa-solid fa-boxes-stacked"></i> Kho PDB</a>
+      <a href="reports.html" class="nav-link"><i class="fa-solid fa-file-invoice-dollar"></i> Báo cáo Cross-PDB</a>
+      <a href="architecture.html" class="nav-link" style="color: #38bdf8;"><i class="fa-solid fa-network-wired"></i> Kiến trúc & Vấn đáp</a>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="container">
+    
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><i class="fa-solid fa-cubes-stacked" style="color: var(--primary);"></i> Bảng Điều Khiển Chuỗi Siêu Thị Đa Chi Nhánh</h1>
+        <p class="page-subtitle">Kiến trúc Multitenant: Mỗi chi nhánh là một <strong>Pluggable Database (PDB)</strong> độc lập dữ liệu, quản trị tập trung tại <strong>CDB$ROOT</strong></p>
+      </div>
+      <div>
+        <a href="pos.html" class="btn btn-primary"><i class="fa-solid fa-cart-shopping"></i> Mở POS Bán Hàng</a>
+        <a href="reports.html" class="btn btn-outline"><i class="fa-solid fa-chart-pie"></i> Xem Báo Cáo Chuỗi</a>
+      </div>
+    </div>
+
+    <!-- NOTIFICATION BAR -->
+    <div class="alert alert-info">
+      <i class="fa-solid fa-circle-info fa-lg"></i>
+      <div>
+        <strong>Oracle 23ai Multitenant Status:</strong> CDB$ROOT đang kết nối qua Common User <code>c##admin_chuoi</code>. Đang quản lý <strong>3 PDBs</strong> (pdb_quan1, pdb_quan7, pdb_thuduc) với dữ liệu tồn kho và hoá đơn cô lập an toàn.
+      </div>
+    </div>
+
+    <!-- STATS SUMMARY CARDS -->
+    <div class="grid-cols-4">
+      <div class="stat-card">
+        <div>
+          <div class="stat-label">Tổng Doanh Thu Hợp Nhất</div>
+          <div class="stat-value" id="stat-total-revenue">Đang tải...</div>
+        </div>
+        <div class="stat-icon" style="background: #eff6ff; color: #2563eb;">
+          <i class="fa-solid fa-sack-dollar"></i>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div>
+          <div class="stat-label">Tổng Đơn Hàng Toàn Chuỗi</div>
+          <div class="stat-value" id="stat-total-orders">Đang tải...</div>
+        </div>
+        <div class="stat-icon" style="background: #ecfdf5; color: #059669;">
+          <i class="fa-solid fa-receipt"></i>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div>
+          <div class="stat-label">Số Chi Nhánh (PDBs)</div>
+          <div class="stat-value" id="stat-total-pdbs">3 PDBs</div>
+        </div>
+        <div class="stat-icon" style="background: #fdf4ff; color: #a855f7;">
+          <i class="fa-solid fa-database"></i>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div>
+          <div class="stat-label">Sản Phẩm Cảnh Báo Kho</div>
+          <div class="stat-value" id="stat-low-stock" style="color: var(--danger);">Đang kiểm tra...</div>
+        </div>
+        <div class="stat-icon" style="background: #fef2f2; color: #dc2626;">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- PDB BRANCH CARDS -->
+    <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: var(--secondary);">
+      <i class="fa-solid fa-server"></i> Danh Sách Chi Nhánh (Pluggable Databases)
+    </h2>
+
+    <div class="grid-cols-3" id="branches-list">
+      <!-- Sẽ được tải động bằng JavaScript -->
+      <div class="pdb-card">
+        <div class="pdb-card-body">Đang tải danh sách PDB...</div>
+      </div>
+    </div>
+
+    <!-- RECENT TRANSACTIONS TABLE -->
+    <div class="table-container">
+      <div class="table-header">
+        <div>
+          <h3 style="font-size: 1rem; font-weight: 700; color: var(--secondary);">
+            <i class="fa-solid fa-clock-rotate-left"></i> Giao Dịch Bán Hàng Mới Nhất Trên Các PDB
+          </h3>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Dữ liệu ghi nhận thông qua Procedure SP_TAO_HOADON và kích hoạt Trigger</span>
+        </div>
+        <a href="pos.html" class="btn btn-outline" style="font-size: 0.8rem;"><i class="fa-solid fa-plus"></i> Tạo đơn mới</a>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Mã Hoá Đơn</th>
+            <th>Chi Nhánh / PDB</th>
+            <th>Thời Gian</th>
+            <th>Khách Hàng</th>
+            <th>Thu Ngân</th>
+            <th>Tổng Tiền</th>
+            <th>Thanh Toán</th>
+            <th>Trạng Thái</th>
+          </tr>
+        </thead>
+        <tbody id="recent-orders-body">
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 2rem;">Đang nạp dữ liệu hoá đơn...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div style="margin-bottom: 0.5rem; font-weight: 600; color: #f1f5f9;">
+      Đồ án Quản trị Cơ sở Dữ liệu (Oracle Database 23ai) - HUFLIT 2026
+    </div>
+    <div>Đề tài 1: Hệ thống Quản lý Chuỗi Siêu Thị Đa Chi Nhánh (Multitenant CDB/PDB)</div>
+    <div style="margin-top: 0.4rem; color: #64748b; font-size: 0.75rem;">
+      Tuân thủ chuẩn kỹ thuật Mục 3.2 & Kiến trúc ứng dụng hoàn chỉnh Mục 3.3
+    </div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script>
+    function formatMoney(num) {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(num);
+    }
+
+    async function loadDashboard() {
+      try {
+        // Tải báo cáo hợp nhất Cross-PDB
+        const report = await API.getCrossPdbRevenue();
+        if (report.success) {
+          document.getElementById('stat-total-revenue').innerText = formatMoney(report.summary.tong_doanh_thu_toan_chuoi);
+          document.getElementById('stat-total-orders').innerText = `${report.summary.tong_so_don_toan_chuoi} đơn`;
+          document.getElementById('stat-total-pdbs').innerText = `${report.summary.so_pdb_hoat_dong} PDBs`;
+        }
+
+        // Tải danh sách chi nhánh PDB
+        const branchData = await API.getBranches();
+        if (branchData.success) {
+          const container = document.getElementById('branches-list');
+          let lowStockCount = 0;
+          container.innerHTML = branchData.data.map(b => {
+            lowStockCount += (b.lowStockItems || 0);
+            return `
+              <div class="pdb-card">
+                <div class="pdb-card-header">
+                  <div class="pdb-title">
+                    <i class="fa-solid fa-shop" style="color: var(--primary);"></i>
+                    <span>${b.ma_cn}</span>
+                  </div>
+                  <span class="pdb-tag"><i class="fa-solid fa-database"></i> ${b.pdb_name}</span>
+                </div>
+                <div class="pdb-card-body">
+                  <h4 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem;">${b.ten_cn}</h4>
+                  <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;"><i class="fa-solid fa-location-dot"></i> ${b.dia_chi}</p>
+                  
+                  <div class="pdb-metric">
+                    <span style="color: var(--text-muted);">Trạng thái PDB:</span>
+                    <span class="badge badge-success"><i class="fa-solid fa-check"></i> ${b.pdb_status}</span>
+                  </div>
+                  <div class="pdb-metric">
+                    <span style="color: var(--text-muted);">Doanh thu PDB:</span>
+                    <strong>${formatMoney(b.totalRevenue)}</strong>
+                  </div>
+                  <div class="pdb-metric">
+                    <span style="color: var(--text-muted);">Số đơn đã lập:</span>
+                    <span>${b.totalOrders} hoá đơn</span>
+                  </div>
+                  <div class="pdb-metric">
+                    <span style="color: var(--text-muted);">Cảnh báo tồn kho:</span>
+                    <span class="badge ${b.lowStockItems > 0 ? 'badge-danger' : 'badge-success'}">${b.lowStockItems} mặt hàng</span>
+                  </div>
+
+                  <div style="margin-top: 1.25rem; display: flex; gap: 0.5rem;">
+                    <a href="pos.html?branch=${b.ma_cn}" class="btn btn-primary" style="flex: 1; font-size: 0.8rem;">
+                      <i class="fa-solid fa-cash-register"></i> Bán tại PDB
+                    </a>
+                    <a href="inventory.html?branch=${b.ma_cn}" class="btn btn-outline" style="flex: 1; font-size: 0.8rem;">
+                      <i class="fa-solid fa-warehouse"></i> Xem kho
+                    </a>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          document.getElementById('stat-low-stock').innerText = `${lowStockCount} mặt hàng`;
+        }
+
+        // Tải đơn hàng gần nhất
+        const orderData = await API.getOrders();
+        if (orderData.success) {
+          const tbody = document.getElementById('recent-orders-body');
+          if (orderData.data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Chưa có đơn hàng nào</td></tr>`;
+          } else {
+            tbody.innerHTML = orderData.data.slice(0, 8).map(ord => {
+              const dt = new Date(ord.ngay_lap).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+              return `
+                <tr>
+                  <td><strong>${ord.ma_hd}</strong></td>
+                  <td><span class="pdb-tag">${ord.pdb_name}</span> (${ord.ma_cn})</td>
+                  <td style="color: var(--text-muted); font-size: 0.8rem;">${dt}</td>
+                  <td>${ord.ten_kh || 'Khách lẻ'}</td>
+                  <td style="font-size: 0.8rem;">${ord.thu_ngan}</td>
+                  <td><strong style="color: #059669;">${formatMoney(ord.tong_tien)}</strong></td>
+                  <td><span class="badge badge-info">${ord.phuong_thuc}</span></td>
+                  <td><span class="badge badge-success">${ord.trang_thai}</span></td>
+                </tr>
+              `;
+            }).join('');
+          }
+        }
+
+      } catch (err) {
+        console.error('Lỗi khi tải Dashboard:', err);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+  </script>
+</body>
+</html>

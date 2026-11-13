@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Tồn Kho PDB | Oracle Database 23ai</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">
+      <i class="fa-solid fa-store" style="color: #60a5fa;"></i>
+      <span>MegaMart Kho</span>
+      <span class="badge-tech">Tồn kho Cô Lập PDB</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link"><i class="fa-solid fa-chart-line"></i> Tổng quan</a>
+      <a href="pos.html" class="nav-link"><i class="fa-solid fa-cash-register"></i> Bán hàng (POS)</a>
+      <a href="inventory.html" class="nav-link active"><i class="fa-solid fa-boxes-stacked"></i> Kho PDB</a>
+      <a href="reports.html" class="nav-link"><i class="fa-solid fa-file-invoice-dollar"></i> Báo cáo Cross-PDB</a>
+      <a href="architecture.html" class="nav-link" style="color: #38bdf8;"><i class="fa-solid fa-network-wired"></i> Kiến trúc & Vấn đáp</a>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="container">
+    
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><i class="fa-solid fa-warehouse" style="color: var(--primary);"></i> Quản Lý Tồn Kho Theo Từng Chi Nhánh (PDB)</h1>
+        <p class="page-subtitle">Dữ liệu bảng <code>TONKHO</code> được lưu độc lập tại từng Pluggable Database, không lẫn lộn giữa các chi nhánh</p>
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <button onclick="openImportModal()" class="btn btn-primary"><i class="fa-solid fa-box-open"></i> Nhập Hàng Vào Kho</button>
+        <button onclick="openTransferModal()" class="btn btn-warning"><i class="fa-solid fa-arrow-right-arrow-left"></i> Điều Chuyển Giữa 2 PDB</button>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div style="background: white; border: 1px solid var(--border); border-radius: 0.75rem; padding: 1rem 1.25rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <label style="font-weight: 700; color: var(--secondary);">Chọn Chi Nhánh / PDB:</label>
+        <select id="branch-select" class="form-control" style="width: 280px; font-weight: 600;" onchange="loadInventory()">
+          <!-- Options động -->
+        </select>
+      </div>
+
+      <div id="branch-status-box" style="font-size: 0.85rem; color: var(--text-muted);">
+        <!-- Sẽ nạp thông tin PDB -->
+      </div>
+    </div>
+
+    <!-- ALERT BANNER -->
+    <div id="action-alert" style="display: none;" class="alert"></div>
+
+    <!-- INVENTORY TABLE -->
+    <div class="table-container">
+      <div class="table-header">
+        <div>
+          <h3 style="font-size: 1rem; font-weight: 700; color: var(--secondary);">
+            <i class="fa-solid fa-table-list"></i> Bảng Tồn Kho Mặt Hàng Tại PDB Hiện Hành
+          </h3>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Bảng <code>TONKHO</code> (Khóa chính kép: MA_CN + MA_SP)</span>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Mã SP</th>
+            <th>Mã Vạch Barcode</th>
+            <th>Tên Sản Phẩm</th>
+            <th>Ngành Hàng</th>
+            <th>Đơn Vị Tính</th>
+            <th>Giá Niêm Yết</th>
+            <th>Số Lượng Tồn</th>
+            <th>Ngưỡng Cảnh Báo</th>
+            <th>Trạng Thái</th>
+          </tr>
+        </thead>
+        <tbody id="inventory-table-body">
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 2rem;">Đang tải danh sách tồn kho...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- AUDIT LOG TABLE -->
+    <div class="table-container">
+      <div class="table-header">
+        <div>
+          <h3 style="font-size: 1rem; font-weight: 700; color: var(--secondary);">
+            <i class="fa-solid fa-list-check"></i> Nhật Ký Kiểm Toán Biến Động Kho (Bảng LICHSU_TONKHO)
+          </h3>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Được tự động ghi nhận bởi Trigger hoặc Procedure khi có giao dịch nhập/xuất</span>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Mã Log</th>
+            <th>Chi Nhánh</th>
+            <th>Mã SP</th>
+            <th>Loại Giao Dịch</th>
+            <th>Biến Động</th>
+            <th>Tồn Trước</th>
+            <th>Tồn Sau</th>
+            <th>Mã Chứng Từ</th>
+            <th>Thời Gian</th>
+            <th>Ghi Chú</th>
+          </tr>
+        </thead>
+        <tbody id="audit-log-body">
+          <tr>
+            <td colspan="10" style="text-align: center; padding: 2rem;">Đang nạp nhật ký kiểm toán...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <!-- MODAL NHẬP HÀNG -->
+  <div class="modal-overlay" id="import-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 style="color: var(--secondary); font-size: 1.15rem;"><i class="fa-solid fa-box-open" style="color: var(--primary);"></i> Nhập Hàng Vào Kho Chi Nhánh</h3>
+        <button onclick="closeModals()" style="border: none; background: transparent; font-size: 1.25rem; cursor: pointer;">&times;</button>
+      </div>
+      <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Thực thi Procedure: <code>PKG_QUANLY_BANHANG.SP_NHAP_KHO</code>
+      </div>
+      <form onsubmit="handleImport(event)">
+        <div class="form-group">
+          <label>Chi Nhánh Nhập (PDB):</label>
+          <select id="import-branch" class="form-control" required></select>
+        </div>
+        <div class="form-group">
+          <label>Mặt Hàng Sản Phẩm:</label>
+          <select id="import-product" class="form-control" required></select>
+        </div>
+        <div class="form-group">
+          <label>Số Lượng Nhập:</label>
+          <input type="number" id="import-qty" class="form-control" min="1" value="20" required>
+        </div>
+        <div class="form-group">
+          <label>Ghi Chú Đợt Nhập:</label>
+          <input type="text" id="import-note" class="form-control" value="Nhập bổ sung từ Tổng kho HCM">
+        </div>
+        <div style="margin-top: 1.25rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
+          <button type="button" onclick="closeModals()" class="btn btn-outline">Huỷ</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Xác Nhận Nhập Kho</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL ĐIỀU CHUYỂN KHO -->
+  <div class="modal-overlay" id="transfer-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 style="color: var(--secondary); font-size: 1.15rem;"><i class="fa-solid fa-arrow-right-arrow-left" style="color: var(--warning);"></i> Điều Chuyển Giữa 2 PDB</h3>
+        <button onclick="closeModals()" style="border: none; background: transparent; font-size: 1.25rem; cursor: pointer;">&times;</button>
+      </div>
+      <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Thực thi Procedure: <code>PKG_QUANLY_BANHANG.SP_DIEUCHUYEN_KHO</code>
+      </div>
+      <form onsubmit="handleTransfer(event)">
+        <div class="form-group">
+          <label>Chi Nhánh Nguồn (Xuất):</label>
+          <select id="transfer-from" class="form-control" required></select>
+        </div>
+        <div class="form-group">
+          <label>Chi Nhánh Đích (Nhận):</label>
+          <select id="transfer-to" class="form-control" required></select>
+        </div>
+        <div class="form-group">
+          <label>Sản Phẩm Điều Chuyển:</label>
+          <select id="transfer-product" class="form-control" required></select>
+        </div>
+        <div class="form-group">
+          <label>Số Lượng Chuyển:</label>
+          <input type="number" id="transfer-qty" class="form-control" min="1" value="10" required>
+        </div>
+        <div class="form-group">
+          <label>Lý Do / Ghi Chú:</label>
+          <input type="text" id="transfer-note" class="form-control" value="Cân đối tồn kho chi nhánh">
+        </div>
+        <div style="margin-top: 1.25rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
+          <button type="button" onclick="closeModals()" class="btn btn-outline">Huỷ</button>
+          <button type="submit" class="btn btn-warning"><i class="fa-solid fa-arrow-right"></i> Thực Hiện Chuyển Kho</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div style="margin-bottom: 0.5rem; font-weight: 600; color: #f1f5f9;">
+      Đồ án Quản trị Cơ sở Dữ liệu (Oracle Database 23ai) - HUFLIT 2026
+    </div>
+    <div>Đề tài 1: Hệ thống Quản lý Chuỗi Siêu Thị Đa Chi Nhánh (Multitenant CDB/PDB)</div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script>
+    let allBranches = [];
+    let allProducts = [];
+
+    function formatMoney(num) {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(num);
+    }
+
+    async function initInventory() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const bParam = urlParams.get('branch');
+
+      const branchRes = await API.getBranches();
+      if (branchRes.success) {
+        allBranches = branchRes.data;
+        const select = document.getElementById('branch-select');
+        select.innerHTML = allBranches.map(b => `
+          <option value="${b.ma_cn}" ${bParam === b.ma_cn ? 'selected' : ''}>
+            ${b.ten_cn} (${b.pdb_name})
+          </option>
+        `).join('');
+      }
+
+      const prodRes = await API.getProducts();
+      if (prodRes.success) {
+        allProducts = prodRes.data;
+      }
+
+      await loadInventory();
+      await loadLogs();
+    }
+
+    async function loadInventory() {
+      const selectedId = document.getElementById('branch-select').value;
+      const b = allBranches.find(x => x.ma_cn === selectedId);
+
+      if (b) {
+        document.getElementById('branch-status-box').innerHTML = `
+          <strong>PDB Name:</strong> <code>${b.pdb_name}</code> | 
+          <strong>Oracle Service:</strong> <code>${b.oracle_service}</code> | 
+          <span class="badge badge-success"><i class="fa-solid fa-check"></i> ${b.pdb_status}</span>
+        `;
+      }
+
+      const res = await API.getInventory(selectedId);
+      const tbody = document.getElementById('inventory-table-body');
+
+      if (res.success) {
+        tbody.innerHTML = res.data.map(item => `
+          <tr>
+            <td><strong>${item.ma_sp}</strong></td>
+            <td style="font-family: monospace; font-size: 0.8rem;">${item.barcode}</td>
+            <td><strong>${item.ten_sp}</strong></td>
+            <td><span class="badge badge-info">${item.ten_dm}</span></td>
+            <td>${item.don_vi_tinh}</td>
+            <td>${formatMoney(item.gia_niem_yet)}</td>
+            <td>
+              <strong style="font-size: 1rem; color: ${item.is_low_stock ? 'var(--danger)' : 'var(--secondary)'};">
+                ${item.so_luong_ton}
+              </strong>
+            </td>
+            <td>${item.nguong_canh_bao}</td>
+            <td>
+              <span class="badge ${item.is_low_stock ? 'badge-danger' : 'badge-success'}">
+                ${item.is_low_stock ? '<i class="fa-solid fa-triangle-exclamation"></i> Sắp hết' : '<i class="fa-solid fa-circle-check"></i> Đủ hàng'}
+              </span>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    async function loadLogs() {
+      const res = await API.getAuditLogs();
+      const tbody = document.getElementById('audit-log-body');
+
+      if (res.success && res.data.length > 0) {
+        tbody.innerHTML = res.data.map(log => {
+          const dt = new Date(log.thoi_gian).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit' });
+          const isNegative = log.so_luong < 0;
+          return `
+            <tr>
+              <td>#${log.ma_log}</td>
+              <td><span class="pdb-tag">${log.ma_cn}</span></td>
+              <td><strong>${log.ma_sp}</strong></td>
+              <td><span class="badge ${log.loai_gd === 'BAN_HANG' ? 'badge-danger' : log.loai_gd === 'NHAP_KHO' ? 'badge-success' : 'badge-warning'}">${log.loai_gd}</span></td>
+              <td style="font-weight: 700; color: ${isNegative ? 'var(--danger)' : 'var(--accent)'};">
+                ${isNegative ? log.so_luong : '+' + log.so_luong}
+              </td>
+              <td>${log.ton_truoc}</td>
+              <td><strong>${log.ton_sau}</strong></td>
+              <td style="font-family: monospace; font-size: 0.75rem;">${log.chung_tu}</td>
+              <td style="font-size: 0.8rem; color: var(--text-muted);">${dt}</td>
+              <td style="font-size: 0.8rem;">${log.ghi_chu}</td>
+            </tr>
+          `;
+        }).join('');
+      } else {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted);">Chưa có nhật ký kiểm toán</td></tr>`;
+      }
+    }
+
+    function openImportModal() {
+      const selectBranch = document.getElementById('import-branch');
+      const selectProd = document.getElementById('import-product');
+      selectBranch.innerHTML = allBranches.map(b => `<option value="${b.ma_cn}">${b.ten_cn} (${b.pdb_name})</option>`).join('');
+      selectProd.innerHTML = allProducts.map(p => `<option value="${p.ma_sp}">${p.ten_sp} (${p.ma_sp})</option>`).join('');
+      document.getElementById('import-modal').style.display = 'flex';
+    }
+
+    function openTransferModal() {
+      const fromSelect = document.getElementById('transfer-from');
+      const toSelect = document.getElementById('transfer-to');
+      const prodSelect = document.getElementById('transfer-product');
+
+      fromSelect.innerHTML = allBranches.map((b, i) => `<option value="${b.ma_cn}" ${i===0?'selected':''}>${b.ten_cn} (${b.pdb_name})</option>`).join('');
+      toSelect.innerHTML = allBranches.map((b, i) => `<option value="${b.ma_cn}" ${i===1?'selected':''}>${b.ten_cn} (${b.pdb_name})</option>`).join('');
+      prodSelect.innerHTML = allProducts.map(p => `<option value="${p.ma_sp}">${p.ten_sp} (${p.ma_sp})</option>`).join('');
+
+      document.getElementById('transfer-modal').style.display = 'flex';
+    }
+
+    function closeModals() {
+      document.getElementById('import-modal').style.display = 'none';
+      document.getElementById('transfer-modal').style.display = 'none';
+    }
+
+    async function handleImport(e) {
+      e.preventDefault();
+      const ma_cn = document.getElementById('import-branch').value;
+      const ma_sp = document.getElementById('import-product').value;
+      const so_luong = document.getElementById('import-qty').value;
+      const ghi_chu = document.getElementById('import-note').value;
+
+      const res = await API.importStock({ ma_cn, ma_sp, so_luong, ghi_chu });
+      closeModals();
+      showFeedback(res.success ? 'success' : 'danger', res.message);
+      await loadInventory();
+      await loadLogs();
+    }
+
+    async function handleTransfer(e) {
+      e.preventDefault();
+      const ma_cn_nguon = document.getElementById('transfer-from').value;
+      const ma_cn_dich = document.getElementById('transfer-to').value;
+      const ma_sp = document.getElementById('transfer-product').value;
+      const so_luong = document.getElementById('transfer-qty').value;
+      const ghi_chu = document.getElementById('transfer-note').value;
+
+      const res = await API.transferStock({ ma_cn_nguon, ma_cn_dich, ma_sp, so_luong, ghi_chu });
+      closeModals();
+      showFeedback(res.success ? 'success' : 'danger', res.message);
+      await loadInventory();
+      await loadLogs();
+    }
+
+    function showFeedback(type, msg) {
+      const alertBox = document.getElementById('action-alert');
+      alertBox.className = `alert alert-${type}`;
+      alertBox.innerHTML = `<strong>Thông báo kết quả:</strong> ${msg}`;
+      alertBox.style.display = 'flex';
+      setTimeout(() => { alertBox.style.display = 'none'; }, 6000);
+    }
+
+    document.addEventListener('DOMContentLoaded', initInventory);
+  </script>
+</body>
+</html>
