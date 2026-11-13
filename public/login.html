@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng Nhập Hệ Thống Chuỗi Siêu Thị | Oracle 23ai Multitenant</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-glow: rgba(59, 130, 246, 0.5);
+      --accent-purple: #a855f7;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --bg-dark: #090d16;
+      --card-bg: rgba(18, 26, 43, 0.75);
+      --border-glass: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+      position: relative;
+      overflow-x: hidden;
+      color: var(--text-main);
+    }
+
+    /* AMBIENT GLOW LIGHTS */
+    .ambient-glow {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.45;
+      animation: floatGlow 14s ease-in-out infinite alternate;
+    }
+    .glow-1 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, #2563eb, transparent 70%);
+      top: -100px;
+      left: -100px;
+    }
+    .glow-2 {
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, #9333ea, transparent 70%);
+      bottom: -100px;
+      right: -100px;
+      animation-delay: -7s;
+    }
+    .glow-3 {
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(circle, #06b6d4, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0.2;
+    }
+
+    @keyframes floatGlow {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(40px, 30px) scale(1.15); }
+    }
+
+    /* GRID BACKGROUND OVERLAY */
+    .grid-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* MAIN LOGIN CONTAINER */
+    .login-wrapper {
+      position: relative;
+      z-index: 10;
+      max-width: 1060px;
+      width: 100%;
+      background: var(--card-bg);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border-glass);
+      border-radius: 1.5rem;
+      box-shadow: 
+        0 25px 60px -15px rgba(0, 0, 0, 0.7),
+        0 0 0 1px rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1.15fr 0.95fr;
+      transition: all 0.3s ease;
+    }
+
+    @media (max-width: 900px) {
+      .login-wrapper {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* LEFT SIDE: BRAND & ROLE SHOWCASE */
+    .brand-side {
+      padding: 2.5rem;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
+      border-right: 1px solid var(--border-glass);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .brand-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .brand-logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: white;
+      box-shadow: 0 8px 16px -4px rgba(59, 130, 246, 0.5);
+    }
+
+    .brand-title {
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .tech-pill-container {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.75rem;
+    }
+
+    .tech-pill {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .tech-pill.active {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.4);
+      color: #93c5fd;
+    }
+
+    /* ROLE QUICK SELECT CARDS */
+    .roles-section-title {
+      font-size: 0.825rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+      margin-bottom: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .roles-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .role-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 0.85rem;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .role-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 3px; height: 100%;
+      background: transparent;
+      transition: all 0.2s;
+    }
+
+    .role-card:hover {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.18);
+      transform: translateX(4px);
+    }
+
+    .role-card.active-role {
+      background: rgba(59, 130, 246, 0.12);
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+    .role-card.active-role::before {
+      background: var(--primary);
+    }
+
+    .role-card-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .role-icon-box {
+      width: 38px;
+      height: 38px;
+      border-radius: 0.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .role-card-name {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 2px;
+    }
+
+    .role-card-meta {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .badge-scope {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.02em;
+    }
+    .badge-common {
+      background: rgba(168, 85, 247, 0.2);
+      color: #d8b4fe;
+      border: 1px solid rgba(168, 85, 247, 0.35);
+    }
+    .badge-local {
+      background: rgba(6, 182, 212, 0.18);
+      color: #67e8f9;
+      border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+
+    /* RIGHT SIDE: GLASS LOGIN FORM */
+    .form-side {
+      padding: 3rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: rgba(10, 15, 29, 0.4);
+    }
+
+    .form-header {
+      margin-bottom: 1.75rem;
+    }
+    .form-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 0.35rem;
+    }
+    .form-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.825rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 0.5rem;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 1rem;
+      color: #64748b;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+
+    .form-control-glass {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 0.75rem;
+      padding: 0.8rem 1rem 0.8rem 2.6rem;
+      font-size: 0.9rem;
+      color: white;
+      outline: none;
+      transition: all 0.25s;
+    }
+
+    .form-control-glass:focus {
+      border-color: var(--primary);
+      background: rgba(15, 23, 42, 0.9);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    .form-control-glass:focus + .input-icon {
+      color: var(--primary);
+    }
+
+    .btn-toggle-eye {
+      position: absolute;
+      right: 0.85rem;
+      background: transparent;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 0.95rem;
+      padding: 4px;
+      transition: color 0.2s;
+    }
+    .btn-toggle-eye:hover {
+      color: #cbd5e1;
+    }
+
+    /* SUBMIT BUTTON WITH GLOW & RIPPLE */
+    .btn-submit-glow {
+      width: 100%;
+      padding: 0.9rem;
+      border: none;
+      border-radius: 0.75rem;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-submit-glow:hover {
+      background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px -5px rgba(59, 130, 246, 0.6);
+    }
+
+    .btn-submit-glow:active {
+      transform: translateY(0);
+    }
+
+    .btn-submit-glow:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ALERT BOX */
+    .alert-glass {
+      padding: 0.85rem 1rem;
+      border-radius: 0.75rem;
+      font-size: 0.85rem;
+      margin-bottom: 1.25rem;
+      display: none;
+      align-items: flex-start;
+      gap: 0.65rem;
+      line-height: 1.4;
+      animation: fadeIn 0.3s ease;
+    }
+    .alert-glass-error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+    }
+    .alert-glass-success {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #6ee7b7;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* FOOTER BAR */
+    .login-footer {
+      margin-top: 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      z-index: 10;
+      max-width: 1060px;
+      width: 100%;
+      padding: 0 0.5rem;
+    }
+
+    .login-footer a {
+      color: #94a3b8;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: color 0.2s;
+    }
+    .login-footer a:hover {
+      color: #60a5fa;
+    }
+
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulseDot 2s infinite;
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- AMBIENT GLOWS -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="ambient-glow glow-3"></div>
+  <div class="grid-overlay"></div>
+
+  <!-- MAIN LOGIN CARD -->
+  <div class="login-wrapper">
+
+    <!-- CỘT TRÁI: THƯƠNG HIỆU & CHỌN NHANH VAI TRÒ DEMO -->
+    <div class="brand-side">
+      <div>
+        <!-- BRAND LOGO -->
+        <div class="brand-header">
+          <div class="brand-logo-icon">
+            <i class="fa-solid fa-store"></i>
+          </div>
+          <div>
+            <h1 class="brand-title">MegaMart Multitenant</h1>
+            <p style="font-size: 0.78rem; color: #94a3b8;">Hệ Thống Chuỗi Siêu Thị Đa Chi Nhánh</p>
+          </div>
+        </div>
+
+        <!-- TECH PILLS -->
+        <div class="tech-pill-container">
+          <span class="tech-pill active"><i class="fa-solid fa-cube"></i> Oracle 23ai Free</span>
+          <span class="tech-pill"><i class="fa-solid fa-database"></i> Multitenant CDB/PDB</span>
+          <span class="tech-pill"><i class="fa-solid fa-shield-halved"></i> 5 RBAC Roles</span>
+          <span class="tech-pill"><i class="fa-solid fa-network-wired"></i> Cross-PDB Query</span>
+        </div>
+
+        <!-- 5 ROLES SELECTOR CARDS -->
+        <div class="roles-section-title">
+          <span><i class="fa-solid fa-bolt" style="color: var(--accent-amber);"></i> Đăng Nhập Nhanh Theo Vai Trò</span>
+          <span style="font-size: 0.7rem; color: #64748b; font-weight: normal;">(Bấm 1-chạm)</span>
+        </div>
+
+        <div class="roles-list">
+          
+          <!-- ROLE 1: IT ADMIN -->
+          <div class="role-card active-role" id="card-admin" onclick="selectRole('c##admin_it', 'ITAdmin2026#', this)">
+            <div class="role-card-info">
+              <div class="role-icon-box" style="background: rgba(168, 85, 247, 0.15); color: #c084fc;">
+                <i class="fa-solid fa-crown"></i>
+              </div>
+              <div>
+                <div class="role-card-name">1. Quản Trị Viên Chuỗi (IT Head)</div>
+                <div class="role-card-meta">User: c##admin_it &bull; Toàn quyền hệ thống</div>
+              </div>
+            </div>
+            <span class="badge-scope badge-common">CDB$ROOT</span>
+          </div>
+
+          <!-- ROLE 2: BAN GIÁM ĐỐC -->
+          <div class="role-card" id="card-giamdoc" onclick="selectRole('c##giam_doc', 'Director2026#', this)">
+            <div class="role-card-info">
+              <div class="role-icon-box" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">
+                <i class="fa-solid fa-chart-pie"></i>
+              </div>
+              <div>
+                <div class="role-card-name">2. Tổng Giám Đốc (Executive)</div>
+                <div class="role-card-meta">User: c##giam_doc &bull; Báo cáo Cross-PDB</div>
+              </div>
+            </div>
+            <span class="badge-scope badge-common">CDB$ROOT</span>
+          </div>
+
+          <!-- ROLE 3: CỬA HÀNG TRƯỞNG Q1 -->
+          <div class="role-card" id="card-quanly" onclick="selectRole('q1_quanly', 'Q1Manager2026#', this)">
+            <div class="role-card-info">
+              <div class="role-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">
+                <i class="fa-solid fa-user-tie"></i>
+              </div>
+              <div>
+                <div class="role-card-name">3. Cửa Hàng Trưởng Q1 (Manager)</div>
+                <div class="role-card-meta">User: q1_quanly &bull; Vận hành chi nhánh</div>
+              </div>
+            </div>
+            <span class="badge-scope badge-local">pdb_quan1</span>
+          </div>
+
+          <!-- ROLE 4: THU NGÂN POS Q1 -->
+          <div class="role-card" id="card-thungan" onclick="selectRole('q1_thungan01', 'Q1Cashier2026#', this)">
+            <div class="role-card-info">
+              <div class="role-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">
+                <i class="fa-solid fa-cash-register"></i>
+              </div>
+              <div>
+                <div class="role-card-name">4. Nhân Viên Thu Ngân POS Q1</div>
+                <div class="role-card-meta">User: q1_thungan01 &bull; Bán hàng SP_TAO_HOADON</div>
+              </div>
+            </div>
+            <span class="badge-scope badge-local">pdb_quan1</span>
+          </div>
+
+          <!-- ROLE 5: THỦ KHO Q1 -->
+          <div class="role-card" id="card-thukho" onclick="selectRole('q1_thukho01', 'Q1Keeper2026#', this)">
+            <div class="role-card-info">
+              <div class="role-icon-box" style="background: rgba(6, 182, 212, 0.15); color: #22d3ee;">
+                <i class="fa-solid fa-boxes-stacked"></i>
+              </div>
+              <div>
+                <div class="role-card-name">5. Thủ Kho Chi Nhánh Q1</div>
+                <div class="role-card-meta">User: q1_thukho01 &bull; Nhập/Chuyển kho</div>
+              </div>
+            </div>
+            <span class="badge-scope badge-local">pdb_quan1</span>
+          </div>
+
+        </div>
+      </div>
+
+      <div style="font-size: 0.72rem; color: #64748b; margin-top: 1.25rem; border-top: 1px solid var(--border-glass); padding-top: 0.75rem;">
+        * Bấm vào bất kỳ vai trò nào ở trên để tự động nạp thông tin và kiểm tra luồng phân quyền.
+      </div>
+    </div>
+
+    <!-- CỘT PHẢI: FORM ĐĂNG NHẬP -->
+    <div class="form-side">
+      <div class="form-header">
+        <h2 class="form-title">Đăng Nhập</h2>
+        <p class="form-subtitle">Nhập tài khoản Oracle Database hoặc chọn vai trò mẫu bên trái</p>
+      </div>
+
+      <!-- ALERT MESSAGE -->
+      <div id="login-alert" class="alert-glass alert-glass-error">
+        <i class="fa-solid fa-circle-exclamation" style="margin-top: 2px;"></i>
+        <div id="login-alert-text"></div>
+      </div>
+
+      <form onsubmit="handleLoginSubmit(event)">
+        
+        <!-- USERNAME INPUT -->
+        <div class="form-group">
+          <div class="form-label">
+            <span>Tài Khoản Oracle:</span>
+            <span id="badge-container-type" style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;"></span>
+          </div>
+          <div class="input-wrapper">
+            <input type="text" id="username" class="form-control-glass" value="c##admin_it" placeholder="vd: c##admin_it hoặc q1_thungan01" required autofocus oninput="onUsernameChange(this.value)">
+            <i class="fa-solid fa-user input-icon"></i>
+          </div>
+        </div>
+
+        <!-- PASSWORD INPUT -->
+        <div class="form-group">
+          <div class="form-label">
+            <span>Mật Khẩu Truy Cập:</span>
+          </div>
+          <div class="input-wrapper">
+            <input type="password" id="password" class="form-control-glass" value="ITAdmin2026#" placeholder="Nhập mật khẩu..." required style="padding-right: 2.8rem;">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <button type="button" class="btn-toggle-eye" onclick="togglePasswordVisibility()" title="Ẩn/Hiện mật khẩu">
+              <i id="eye-icon" class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- SUBMIT BUTTON -->
+        <button type="submit" id="btn-login-submit" class="btn-submit-glow">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span id="btn-text">Đăng Nhập Vào Hệ Thống</span>
+        </button>
+
+      </form>
+
+      <!-- EXTRA INFO -->
+      <div style="margin-top: 2rem; padding: 0.85rem; background: rgba(255, 255, 255, 0.02); border-radius: 0.75rem; border: 1px dashed rgba(255, 255, 255, 0.08); font-size: 0.75rem; color: #94a3b8; line-height: 1.5;">
+        <i class="fa-solid fa-circle-check" style="color: var(--accent-emerald);"></i> <strong>Xác thực Oracle 23ai RBAC:</strong> Quyền hạn giao diện được phân tách hoàn toàn theo nguyên tắc <em>Least Privilege</em>.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM FOOTER -->
+  <div class="login-footer">
+    <div class="system-status">
+      <span class="status-dot"></span>
+      <span>Oracle 23ai Multitenant Service: <strong>FREE (Active)</strong></span>
+    </div>
+    <div style="display: flex; gap: 1rem;">
+      <a href="index.html"><i class="fa-solid fa-desktop"></i> Chế độ Khách xem</a>
+      <a href="architecture.html"><i class="fa-solid fa-diagram-project"></i> Ma trận Phân quyền</a>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    // Kiểm tra loại User gõ vào
+    function onUsernameChange(val) {
+      const badge = document.getElementById('badge-container-type');
+      if (val.toLowerCase().startsWith('c##')) {
+        badge.innerHTML = '<span class="badge-scope badge-common">COMMON (CDB$ROOT)</span>';
+      } else if (val.trim().length > 0) {
+        badge.innerHTML = '<span class="badge-scope badge-local">LOCAL PDB</span>';
+      } else {
+        badge.innerHTML = '';
+      }
+    }
+
+    // Ẩn/hiện mật khẩu
+    function togglePasswordVisibility() {
+      const input = document.getElementById('password');
+      const icon = document.getElementById('eye-icon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-solid fa-eye-slash';
+      } else {
+        input.type = 'password';
+        icon.className = 'fa-solid fa-eye';
+      }
+    }
+
+    // Chọn nhanh Role ở cột trái
+    function selectRole(u, p, el) {
+      document.querySelectorAll('.role-card').forEach(c => c.classList.remove('active-role'));
+      if (el) el.classList.add('active-role');
+
+      document.getElementById('username').value = u;
+      document.getElementById('password').value = p;
+      onUsernameChange(u);
+
+      // Tự động bấm đăng nhập
+      handleLoginSubmit(new Event('submit'));
+    }
+
+    // Xử lý gửi Form Đăng Nhập
+    async function handleLoginSubmit(e) {
+      if (e) e.preventDefault();
+      
+      const alertBox = document.getElementById('login-alert');
+      const alertText = document.getElementById('login-alert-text');
+      alertBox.style.display = 'none';
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const btn = document.getElementById('btn-login-submit');
+      const btnText = document.getElementById('btn-text');
+
+      btn.disabled = true;
+      btnText.innerHTML = 'Đang xác thực với Oracle 23ai...';
+
+      try {
+        const res = await API.login(username, password);
+
+        if (res.success) {
+          // Lưu phiên đăng nhập
+          API.setCurrentUser(res.user, res.token);
+
+          alertBox.className = 'alert-glass alert-glass-success';
+          alertText.innerHTML = `<strong>Đăng nhập thành công!</strong> Xin chào ${res.user.fullname} (${res.user.role_display}). Đang chuyển hướng...`;
+          alertBox.style.display = 'flex';
+
+          btnText.innerText = 'Đăng Nhập Thành Công!';
+          btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+
+          setTimeout(() => {
+            if (res.user.role === 'ROLE_THU_NGAN') {
+              window.location.href = 'pos.html';
+            } else if (res.user.role === 'ROLE_NHAN_VIEN_KHO') {
+              window.location.href = 'inventory.html';
+            } else if (res.user.role === 'c##role_ban_giam_doc') {
+              window.location.href = 'reports.html';
+            } else {
+              window.location.href = 'index.html';
+            }
+          }, 500);
+
+        } else {
+          alertBox.className = 'alert-glass alert-glass-error';
+          if (res.message && res.message.includes('Endpoint not found')) {
+            alertText.innerHTML = `<strong>Server cần được nạp lại:</strong> Bạn đang chạy tiến trình server cũ. Hãy vào cửa sổ Terminal, nhấn <strong>Ctrl + C</strong> và chạy lại <code>node server.js</code> để nạp API mới!`;
+          } else {
+            alertText.innerHTML = res.message || 'Tên đăng nhập hoặc mật khẩu không chính xác!';
+          }
+          alertBox.style.display = 'flex';
+          btn.disabled = false;
+          btnText.innerText = 'Đăng Nhập Vào Hệ Thống';
+        }
+      } catch (err) {
+        alertBox.className = 'alert-glass alert-glass-error';
+        alertText.innerHTML = `Lỗi kết nối máy chủ: ${err.message}. Hãy đảm bảo bạn đã chạy <code>node server.js</code> trong Terminal.`;
+        alertBox.style.display = 'flex';
+        btn.disabled = false;
+        btnText.innerText = 'Đăng Nhập Vào Hệ Thống';
+      }
+    }
+
+    // Khởi tạo trạng thái ban đầu
+    document.addEventListener('DOMContentLoaded', () => {
+      onUsernameChange(document.getElementById('username').value);
+    });
+  </script>
+</body>
+</html>

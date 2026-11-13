@@ -72,14 +72,15 @@ if (express) {
 
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
-    let pathname = url.pathname;
+    let pathname = url.pathname.replace(/\/+$/, '') || '/';
+    const method = req.method ? req.method.toUpperCase() : 'GET';
 
     // Thiết lập Header CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-user-role, x-username, x-container, Authorization');
 
-    if (req.method === 'OPTIONS') {
+    if (method === 'OPTIONS') {
       res.writeHead(204);
       res.end();
       return;
@@ -99,13 +100,14 @@ if (express) {
 
     // Helper giả lập req
     const fakeReq = {
+      headers: req.headers || {},
       query: Object.fromEntries(url.searchParams.entries()),
       params: {},
       body: {}
     };
 
     // 1. Định tuyến API
-    if (pathname.startsWith('/api/')) {
+    if (pathname.startsWith('/api')) {
       // Đọc body nếu là POST/PUT
       let bodyData = '';
       req.on('data', chunk => { bodyData += chunk; });
@@ -117,7 +119,7 @@ if (express) {
         }
 
         // Auth Routes
-        if (pathname === '/api/auth/login' && req.method === 'POST') {
+        if (pathname === '/api/auth/login' && method === 'POST') {
           return authController.login(fakeReq, fakeRes);
         }
         if (pathname === '/api/auth/profile') {

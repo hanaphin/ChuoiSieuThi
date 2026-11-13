@@ -3,6 +3,22 @@ const { state } = require('../config/db');
 // Tạo đơn hàng / Hoá đơn bán lẻ tại Chi nhánh (Minh hoạ Stored Procedure & Trigger)
 function createOrder(req, res) {
   try {
+    const userRole = req.headers['x-user-role'] || 'ROLE_THU_NGAN';
+
+    // =========================================================================
+    // KIỂM TRA PHÂN QUYỀN ORACLE RBAC (MỤC 3.2 & LEAST PRIVILEGE)
+    // Chỉ Thu Ngân, Quản Lý Chi Nhánh hoặc Quản Trị Chuỗi mới được phép tạo đơn
+    // Thủ kho và Ban Giám Đốc (chỉ đọc) bị từ chối
+    // =========================================================================
+    const allowedRoles = ['ROLE_THU_NGAN', 'ROLE_QUAN_LY_CHI_NHANH', 'c##role_quan_tri_chuoi'];
+    if (!allowedRoles.includes(userRole)) {
+      return res.status(403).json({
+        success: false,
+        oracle_error: 'ORA-01031',
+        message: `[Lỗi Oracle ORA-01031: Insufficient Privileges]: Vai trò [${userRole}] không có quyền EXECUTE trên thủ tục PKG_QUANLY_BANHANG.SP_TAO_HOADON!`
+      });
+    }
+
     const { ma_cn, thu_ngan, ten_kh, phuong_thuc, items } = req.body;
 
     if (!ma_cn || !items || !Array.isArray(items) || items.length === 0) {

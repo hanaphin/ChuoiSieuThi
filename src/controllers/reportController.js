@@ -4,6 +4,19 @@ const { state } = require('../config/db');
 // Mô phỏng câu truy vấn: SELECT CON_ID_TO_CON_NAME(CON_ID), SUM(TONG_TIEN) FROM CONTAINERS(HOADON) GROUP BY CON_ID
 function getCrossPdbRevenue(req, res) {
   try {
+    const userRole = req.headers['x-user-role'] || 'c##role_quan_tri_chuoi';
+
+    // KIỂM TRA QUYỀN TRUY VẤN MULTITENANT CROSS-PDB
+    // Mệnh đề CONTAINERS() bắt buộc phải chạy từ CDB$ROOT với Common Role
+    const commonRoles = ['c##role_ban_giam_doc', 'c##role_quan_tri_chuoi'];
+    if (!commonRoles.includes(userRole)) {
+      return res.status(403).json({
+        success: false,
+        oracle_error: 'ORA-01031',
+        message: `[Lỗi Oracle ORA-01031: Insufficient Privileges]: Vai trò [${userRole}] là Local Role trong PDB, không có quyền truy vấn mệnh đề CONTAINERS() tại CDB$ROOT. Bạn cần vai trò Common Role (c##role_ban_giam_doc hoặc c##role_quan_tri_chuoi)!`
+      });
+    }
+
     const branchStats = state.branches.map(b => {
       const orders = state.invoices.filter(i => i.ma_cn === b.ma_cn && i.trang_thai === 'DA_THANH_TOAN');
       const totalRevenue = orders.reduce((sum, i) => sum + i.tong_tien, 0);

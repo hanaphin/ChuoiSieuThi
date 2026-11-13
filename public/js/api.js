@@ -1,16 +1,28 @@
 // Client API Helper kết nối tới Backend Node.js / Express
 const API_BASE = '/api';
 
+function getAuthHeaders() {
+  const user = API.getCurrentUser();
+  const token = localStorage.getItem('megamart_token') || '';
+  return {
+    'Content-Type': 'application/json',
+    'x-user-role': user ? user.role : 'GUEST',
+    'x-username': user ? user.username : 'guest',
+    'x-container': user ? user.container : 'PUBLIC',
+    'Authorization': `Bearer ${token}`
+  };
+}
+
 const API = {
   // Lấy danh sách chi nhánh PDB
   async getBranches() {
-    const res = await fetch(`${API_BASE}/branches`);
+    const res = await fetch(`${API_BASE}/branches`, { headers: getAuthHeaders() });
     return await res.json();
   },
 
   // Lấy danh mục sản phẩm
   async getCategories() {
-    const res = await fetch(`${API_BASE}/categories`);
+    const res = await fetch(`${API_BASE}/categories`, { headers: getAuthHeaders() });
     return await res.json();
   },
 
@@ -20,13 +32,13 @@ const API = {
     if (ma_cn) url += `ma_cn=${encodeURIComponent(ma_cn)}&`;
     if (ma_dm) url += `ma_dm=${encodeURIComponent(ma_dm)}&`;
     if (search) url += `search=${encodeURIComponent(search)}&`;
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: getAuthHeaders() });
     return await res.json();
   },
 
   // Lấy tồn kho chi nhánh
   async getInventory(branchId) {
-    const res = await fetch(`${API_BASE}/inventory/branch/${branchId}`);
+    const res = await fetch(`${API_BASE}/inventory/branch/${branchId}`, { headers: getAuthHeaders() });
     return await res.json();
   },
 
@@ -34,7 +46,7 @@ const API = {
   async importStock(data) {
     const res = await fetch(`${API_BASE}/inventory/import`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     return await res.json();
@@ -44,7 +56,7 @@ const API = {
   async transferStock(data) {
     const res = await fetch(`${API_BASE}/inventory/transfer`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     return await res.json();
@@ -53,7 +65,7 @@ const API = {
   // Lấy lịch sử biến động kho (Audit log)
   async getAuditLogs(ma_cn = '') {
     const url = ma_cn ? `${API_BASE}/inventory/logs?ma_cn=${ma_cn}` : `${API_BASE}/inventory/logs`;
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: getAuthHeaders() });
     return await res.json();
   },
 
@@ -61,7 +73,7 @@ const API = {
   async createOrder(orderData) {
     const res = await fetch(`${API_BASE}/orders`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(orderData)
     });
     return await res.json();
@@ -70,25 +82,25 @@ const API = {
   // Lấy danh sách đơn hàng
   async getOrders(ma_cn = '') {
     const url = ma_cn ? `${API_BASE}/orders?ma_cn=${ma_cn}` : `${API_BASE}/orders`;
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: getAuthHeaders() });
     return await res.json();
   },
 
   // Báo cáo doanh thu Cross-PDB
   async getCrossPdbRevenue() {
-    const res = await fetch(`${API_BASE}/reports/revenue`);
+    const res = await fetch(`${API_BASE}/reports/revenue`, { headers: getAuthHeaders() });
     return await res.json();
   },
 
   // Báo cáo tồn kho Cross-PDB
   async getCrossPdbInventory() {
-    const res = await fetch(`${API_BASE}/reports/inventory-cross-pdb`);
+    const res = await fetch(`${API_BASE}/reports/inventory-cross-pdb`, { headers: getAuthHeaders() });
     return await res.json();
   },
 
   // Báo cáo sản phẩm bán chạy
   async getTopProducts() {
-    const res = await fetch(`${API_BASE}/reports/top-products`);
+    const res = await fetch(`${API_BASE}/reports/top-products`, { headers: getAuthHeaders() });
     return await res.json();
   },
 
@@ -104,24 +116,33 @@ const API = {
     return await res.json();
   },
 
+  // Xác thực đăng nhập
+  async login(username, password) {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    return await res.json();
+  },
+
+  logout() {
+    localStorage.removeItem('megamart_user');
+    localStorage.removeItem('megamart_token');
+    window.location.href = 'login.html';
+  },
+
   // Quản lý Role / User session trên Client
   getCurrentUser() {
     const stored = localStorage.getItem('megamart_user');
     if (stored) {
       try { return JSON.parse(stored); } catch (e) {}
     }
-    // Mặc định là Quản trị chuỗi
-    return {
-      username: 'c##admin_it',
-      fullname: 'Nguyễn Văn An (IT Head)',
-      role: 'c##role_quan_tri_chuoi',
-      container: 'CDB$ROOT',
-      role_name: 'Quản Trị Viên Chuỗi (IT Admin)',
-      type: 'COMMON_ROLE'
-    };
+    return null;
   },
 
-  setCurrentUser(user) {
+  setCurrentUser(user, token) {
     localStorage.setItem('megamart_user', JSON.stringify(user));
+    if (token) localStorage.setItem('megamart_token', token);
   }
 };

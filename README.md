@@ -38,13 +38,15 @@ c:\ChuoiSieuThi\
 │   ├── controllers/          # Bộ điều khiển nghiệp vụ (Branch, Product, Inventory, Order, Report)
 │   └── routes/apiRoutes.js   # Các điểm cuối REST API
 └── public/                   # Tầng Giao diện Front-end (Web App trực quan)
+    ├── login.html            # Màn hình Đăng nhập xác thực 5 Roles & 1-chạm đăng nhập nhanh
     ├── index.html            # Dashboard tổng quan chuỗi & trạng thái các PDB
     ├── pos.html              # Màn hình bán hàng POS chọn PDB (Kiểm tra Trigger ORA-20007 khi hết hàng)
     ├── inventory.html        # Quản lý tồn kho theo từng PDB, Nhập hàng & Điều chuyển kho
     ├── reports.html          # Báo cáo hợp nhất Cross-PDB (Doanh thu, Tồn kho toàn chuỗi, Top sản phẩm)
     ├── architecture.html     # Sơ đồ luồng dữ liệu 3 tầng & Bộ câu hỏi vấn đáp chuẩn bị bảo vệ
     ├── css/styles.css        # Giao diện responsive, hiện đại
-    └── js/api.js             # Client API tương tác bất đồng bộ
+    ├── js/api.js             # Client API tương tác bất đồng bộ
+    └── js/navbar.js          # Quản lý phiên đăng nhập & phân quyền (RBAC) trên Navbar
 ```
 
 ---
@@ -56,6 +58,7 @@ c:\ChuoiSieuThi\
    node server.js
    ```
 2. Mở trình duyệt web và truy cập:
+   * **Màn hình Đăng nhập (5 Roles):** [http://localhost:3000/login.html](http://localhost:3000/login.html)
    * **Trang chủ Dashboard:** [http://localhost:3000](http://localhost:3000)
    * **Bán hàng POS tại Chi nhánh:** [http://localhost:3000/pos.html](http://localhost:3000/pos.html)
    * **Quản lý Tồn kho & Điều chuyển PDB:** [http://localhost:3000/inventory.html](http://localhost:3000/inventory.html)

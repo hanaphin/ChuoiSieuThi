@@ -229,6 +229,14 @@
             ${b.ten_cn} (${b.pdb_name})
           </option>
         `).join('');
+
+        // Giới hạn chi nhánh theo phạm vi Local PDB nếu là Local User
+        const user = API.getCurrentUser();
+        if (user && user.type === 'LOCAL_ROLE' && user.ma_cn) {
+          select.value = user.ma_cn;
+          select.disabled = true;
+          select.title = `Tài khoản Local User [${user.username}] bị giới hạn trong đúng PDB sở tại [${user.container}], không thể xem kho PDB khác!`;
+        }
       }
 
       const prodRes = await API.getProducts();

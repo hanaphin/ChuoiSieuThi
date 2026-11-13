@@ -35,6 +35,20 @@ function getInventoryByBranch(req, res) {
 
 // Nhập hàng vào kho (Mô phỏng Procedure PKG_QUANLY_BANHANG.SP_NHAP_KHO)
 function importStock(req, res) {
+  const userRole = req.headers['x-user-role'] || 'ROLE_NHAN_VIEN_KHO';
+
+  // KIỂM TRA PHÂN QUYỀN ORACLE RBAC
+  // Chỉ Thủ Kho, Quản Lý Chi Nhánh hoặc Admin chuỗi mới được nhập kho
+  // Thu ngân bị từ chối theo nguyên tắc bảo toàn tồn kho
+  const allowedRoles = ['ROLE_NHAN_VIEN_KHO', 'ROLE_QUAN_LY_CHI_NHANH', 'c##role_quan_tri_chuoi'];
+  if (!allowedRoles.includes(userRole)) {
+    return res.status(403).json({
+      success: false,
+      oracle_error: 'ORA-01031',
+      message: `[Lỗi Oracle ORA-01031: Insufficient Privileges]: Vai trò [${userRole}] không được cấp quyền EXECUTE trên PKG_QUANLY_BANHANG.SP_NHAP_KHO! Chỉ Thủ Kho hoặc Quản Lý mới có quyền nhập kho.`
+    });
+  }
+
   const { ma_cn, ma_sp, so_luong, ghi_chu } = req.body;
 
   if (!ma_cn || !ma_sp || !so_luong || Number(so_luong) <= 0) {
@@ -96,6 +110,18 @@ function importStock(req, res) {
 
 // Điều chuyển kho giữa 2 PDB (Mô phỏng Procedure PKG_QUANLY_BANHANG.SP_DIEUCHUYEN_KHO)
 function transferStock(req, res) {
+  const userRole = req.headers['x-user-role'] || 'ROLE_NHAN_VIEN_KHO';
+
+  // Điều chuyển giữa 2 PDB yêu cầu Quản Lý Chi Nhánh hoặc Admin chuỗi duyệt
+  const allowedRoles = ['ROLE_QUAN_LY_CHI_NHANH', 'ROLE_NHAN_VIEN_KHO', 'c##role_quan_tri_chuoi'];
+  if (!allowedRoles.includes(userRole)) {
+    return res.status(403).json({
+      success: false,
+      oracle_error: 'ORA-01031',
+      message: `[Lỗi Oracle ORA-01031: Insufficient Privileges]: Vai trò [${userRole}] không có quyền phê duyệt điều chuyển kho liên chi nhánh!`
+    });
+  }
+
   const { ma_cn_nguon, ma_cn_dich, ma_sp, so_luong, ghi_chu } = req.body;
 
   if (ma_cn_nguon === ma_cn_dich) {

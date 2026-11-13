@@ -184,6 +184,16 @@
         const selected = branchData.data.find(b => b.ma_cn === currentBranch) || branchData.data[0];
         currentBranch = selected.ma_cn;
         document.getElementById('current-pdb-badge').innerHTML = `<i class="fa-solid fa-database"></i> PDB: ${selected.pdb_name}`;
+
+        // Kiểm tra phân quyền phạm vi PDB đối với Local User
+        const user = API.getCurrentUser();
+        if (user && user.type === 'LOCAL_ROLE' && user.ma_cn) {
+          currentBranch = user.ma_cn;
+          branchSelect.value = user.ma_cn;
+          branchSelect.disabled = true;
+          branchSelect.title = `Tài khoản Local User [${user.username}] bị giới hạn trong đúng PDB sở tại [${user.container}], không thể truy cập PDB khác!`;
+          document.getElementById('current-pdb-badge').innerHTML = `<i class="fa-solid fa-lock"></i> Đã khoá PDB: ${user.container}`;
+        }
       }
 
       await loadProducts();
